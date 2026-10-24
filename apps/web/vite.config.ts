@@ -12,6 +12,9 @@ export default defineConfig({
         precompress: false,
         strict: true,
       }),
+      paths: {
+        base: (process.env.BASE_PATH ? (process.env.BASE_PATH as `/${string}`) : (process.env.GITHUB_ACTIONS ? '/era' : '')),
+      },
     }),
   ],
   server: {

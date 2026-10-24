@@ -56,7 +56,7 @@ self.addEventListener('fetch', (event) => {
           })
           .catch(() => {
             // 离线回退到离线主页
-            return caches.match('/') as Promise<Response>;
+            return caches.match(prerendered[0] ?? '/') as Promise<Response>;
           });
       }),
     );
