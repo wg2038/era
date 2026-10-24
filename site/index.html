@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Era</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📜</text></svg>">
+  <style>
+    :root {
+      --bg-color: #f7f4eb;
+      --text-color: #242220;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #181716;
+        --text-color: #e5e0d4;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: "Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "STSong", SimSun, Georgia, "Times New Roman", serif;
+      letter-spacing: 0.04em;
+      text-align: center;
+      padding: 1.5rem;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    p {
+      font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    .dots {
+      display: inline-block;
+      animation: breathe 3.2s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% {
+        opacity: 0.2;
+      }
+      50% {
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dots {
+        animation: none;
+        opacity: 0.85;
+      }
+    }
+  </style>
+</head>
+<body>
+  <p>Project Era is under construction<span class="dots">...</span></p>
+</body>
+</html>
