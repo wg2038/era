@@ -60,6 +60,16 @@
     simState = await client.step();
   }
 
+  async function stepAuto() {
+    if (!client || simState?.is_game_over) return;
+    simState = await client.stepAuto();
+  }
+
+  async function makeChoice(choiceId: string) {
+    if (!client || !simState?.pending_choice) return;
+    simState = await client.makeChoice(choiceId);
+  }
+
   async function runToEnd() {
     if (!client || simState?.is_game_over) return;
     simState = await client.runToEnd();
@@ -115,6 +125,9 @@
       <button class="btn btn-secondary" onclick={stepYear} disabled={!isReady || simState?.is_game_over}>
         推进一年 (Step Year)
       </button>
+      <button class="btn btn-primary" onclick={stepAuto} disabled={!isReady || simState?.is_game_over}>
+        自适应快进 (Auto Step)
+      </button>
       <button class="btn btn-accent" onclick={runToEnd} disabled={!isReady || simState?.is_game_over}>
         推演至终局 (Run To End)
       </button>
@@ -143,6 +156,10 @@
           <p class="birth-info">
             {activePerson.birth_year} 年，出生于<strong>{birthLocationName}</strong>
           </p>
+          <div class="currency-badge">
+            <span class="currency-amount">💰 {simState.current_currency.formatted_amount}</span>
+            <span class="currency-desc">（{simState.current_currency.era_description}）</span>
+          </div>
         </div>
 
         <div class="attrs-grid">
@@ -166,6 +183,35 @@
           </div>
         </div>
       </div>
+
+      <!-- 待玩家抉择事件交互区 (M2 核心) -->
+      {#if simState.pending_choice}
+        <div class="choice-event-card" class:crossroads={simState.pending_choice.is_crossroads}>
+          <div class="choice-header">
+            <span class="event-tier-tag" class:tier-era={simState.pending_choice.tier === 'era'}>
+              {simState.pending_choice.is_crossroads ? '★ 重大人生关口' : simState.pending_choice.tier === 'era' ? '宏观时代事件' : '人生分支抉择'}
+            </span>
+            <h3 class="choice-event-title">{simState.pending_choice.title}</h3>
+          </div>
+          <p class="choice-event-narrative">{simState.pending_choice.narrative}</p>
+
+          <div class="choices-container">
+            {#each simState.pending_choice.choices as opt}
+              <button class="choice-btn" onclick={() => makeChoice(opt.id)}>
+                <div class="choice-text">{opt.text}</div>
+                <div class="effects-row">
+                  {#if opt.dh !== 0}<span class="effect-tag" class:gain={opt.dh > 0}>健康 {opt.dh > 0 ? `+${opt.dh}` : opt.dh}</span>{/if}
+                  {#if opt.dk !== 0}<span class="effect-tag" class:gain={opt.dk > 0}>学识 {opt.dk > 0 ? `+${opt.dk}` : opt.dk}</span>{/if}
+                  {#if opt.dm !== 0}<span class="effect-tag" class:gain={opt.dm > 0}>心情 {opt.dm > 0 ? `+${opt.dm}` : opt.dm}</span>{/if}
+                  {#if opt.di !== 0}<span class="effect-tag" class:gain={opt.di > 0}>见识 {opt.di > 0 ? `+${opt.di}` : opt.di}</span>{/if}
+                  {#if opt.d_wealth !== 0}<span class="effect-tag" class:gain={opt.d_wealth > 0}>购买力 {opt.d_wealth > 0 ? `+${opt.d_wealth}` : opt.d_wealth}</span>{/if}
+                  {#if opt.risk}<span class="effect-tag risk-tag">风险 {Math.round(opt.risk * 100)}%</span>{/if}
+                </div>
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
 
       <!-- 早夭移魂提示 -->
       {#if simState.can_switch_peer}
@@ -592,5 +638,111 @@
   .data-table th {
     color: #8c8477;
     font-weight: 500;
+  }
+  .currency-badge {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .currency-amount {
+    color: #eab308;
+    font-weight: 600;
+  }
+  .currency-desc {
+    color: #8c8477;
+    font-size: 0.78rem;
+  }
+
+  /* 抉择事件交互卡片 */
+  .choice-event-card {
+    background: #1f1b17;
+    border: 1px solid #5a4933;
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+  .choice-event-card.crossroads {
+    border-color: #d97706;
+    background: linear-gradient(180deg, #2b1f14 0%, #1f1812 100%);
+    box-shadow: 0 0 25px rgba(217, 119, 6, 0.2);
+  }
+  .choice-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+  }
+  .event-tier-tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: #3b2c1f;
+    color: #f59e0b;
+    font-weight: 600;
+  }
+  .event-tier-tag.tier-era {
+    background: #1e3a5f;
+    color: #60a5fa;
+  }
+  .choice-event-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-family: var(--font-serif);
+    color: #fef08a;
+  }
+  .choice-event-narrative {
+    color: #d1c7b7;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin: 0 0 1.25rem 0;
+  }
+  .choices-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .choice-btn {
+    text-align: left;
+    background: #28221c;
+    border: 1px solid #4a3c2c;
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
+    color: #f3efe6;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .choice-btn:hover {
+    background: #362e26;
+    border-color: #c79a5b;
+    transform: translateY(-1px);
+  }
+  .choice-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .effects-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .effect-tag {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: #332724;
+    color: #f87171;
+  }
+  .effect-tag.gain {
+    background: #203524;
+    color: #4ade80;
+  }
+  .effect-tag.risk-tag {
+    background: #422006;
+    color: #fb923c;
   }
 </style>

@@ -1,21 +1,19 @@
+# 中国 30 个代表性历史县市历史地名演变库 (1900-2025)
+# 每个地点严格配置非重叠历史时期地名、人口基准权重与史料出处
+
 - id: "loc_beijing"
   currentName: "北京"
   region: "华北"
-  populationWeight:
-    "1900": 1.2
-    "1930": 1.5
-    "1953": 2.8
-    "1982": 4.5
-    "1999": 6.8
+  populationWeight: { "1900": 1.2, "1930": 1.5, "1953": 2.8, "1982": 4.5, "1999": 6.8 }
   historicalNames:
     - startYear: 1900
       endYear: 1911
       name: "京师顺天府"
-      note: "清末直隶总督辖区与顺天府"
+      note: "清末直隶总督与顺天府直辖"
     - startYear: 1912
       endYear: 1927
       name: "北京"
-      note: "中华民国北洋政府时期"
+      note: "中华民国北洋政府首都"
     - startYear: 1928
       endYear: 1948
       name: "北平"
@@ -31,25 +29,20 @@
 - id: "loc_shenzhen"
   currentName: "深圳"
   region: "华南"
-  populationWeight:
-    "1900": 0.2
-    "1930": 0.3
-    "1953": 0.4
-    "1982": 1.2
-    "1999": 5.0
+  populationWeight: { "1900": 0.2, "1930": 0.3, "1953": 0.4, "1982": 1.2, "1999": 5.0 }
   historicalNames:
     - startYear: 1900
       endYear: 1913
       name: "新安县"
-      note: "广州府新安县"
+      note: "清末广州府新安县"
     - startYear: 1914
       endYear: 1978
       name: "宝安县"
-      note: "为避免与河南新安县重名而复称宝安"
+      note: "避河南新安重名复称宝安"
     - startYear: 1979
       endYear: 2025
       name: "深圳市"
-      note: "1979年撤县设市，1980年建立经济特区"
+      note: "1979撤县设市，1980建立特区"
   climate: "subtropical"
   source: "《宝安县志》；《深圳市志·总述》"
   confidence: "A"
@@ -57,21 +50,603 @@
 - id: "loc_shanghai"
   currentName: "上海"
   region: "华东"
-  populationWeight:
-    "1900": 2.5
-    "1930": 3.8
-    "1953": 6.2
-    "1982": 7.5
-    "1999": 9.2
+  populationWeight: { "1900": 2.5, "1930": 3.8, "1953": 6.2, "1982": 7.5, "1999": 9.2 }
   historicalNames:
     - startYear: 1900
       endYear: 1926
       name: "松江府上海县"
-      note: "含公共租界与法租界华洋分治时期"
+      note: "公共租界与法租界华洋分治"
     - startYear: 1927
       endYear: 2025
       name: "上海特别市"
-      note: "1927年设立上海特别市，后沿用上海直辖市"
+      note: "1927年设立特别市后沿用直辖市"
   climate: "subtropical"
   source: "《上海通志》第一卷建置沿革"
+  confidence: "A"
+
+- id: "loc_guangzhou"
+  currentName: "广州"
+  region: "华南"
+  populationWeight: { "1900": 2.2, "1930": 2.8, "1953": 3.5, "1982": 5.1, "1999": 7.0 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1920
+      name: "广州府番禺县"
+      note: "省城附郭番禺与南海分治"
+    - startYear: 1921
+      endYear: 2025
+      name: "广州市"
+      note: "1921年孙中山成立广州市政厅设立广州市"
+  climate: "subtropical"
+  source: "《广州市志·建制志》"
+  confidence: "A"
+
+- id: "loc_tianjin"
+  currentName: "天津"
+  region: "华北"
+  populationWeight: { "1900": 1.8, "1930": 2.4, "1953": 3.2, "1982": 4.2, "1999": 5.5 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "天津府天津县"
+      note: "清末直隶九国租界并存"
+    - startYear: 1912
+      endYear: 1927
+      name: "天津县"
+      note: "废府存县直隶省治"
+    - startYear: 1928
+      endYear: 2025
+      name: "天津特别市"
+      note: "1928年设立特别市，后为直辖市"
+  climate: "temperate"
+  source: "《天津通志·政权志》"
+  confidence: "A"
+
+- id: "loc_nanjing"
+  currentName: "南京"
+  region: "华东"
+  populationWeight: { "1900": 1.4, "1930": 2.2, "1953": 2.6, "1982": 3.5, "1999": 4.8 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "江宁府江宁县"
+      note: "两江总督驻地"
+    - startYear: 1912
+      endYear: 1926
+      name: "南京府/江宁县"
+      note: "民国临时政府所在地"
+    - startYear: 1927
+      endYear: 1948
+      name: "南京特别市"
+      note: "中华民国国民政府首都"
+    - startYear: 1949
+      endYear: 2025
+      name: "南京市"
+      note: "江苏省省会"
+  climate: "subtropical"
+  source: "《南京简志》；《江苏省志》"
+  confidence: "A"
+
+- id: "loc_wuhan"
+  currentName: "武汉"
+  region: "华中"
+  populationWeight: { "1900": 2.0, "1930": 2.6, "1953": 3.8, "1982": 5.2, "1999": 6.5 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1926
+      name: "汉阳府汉口镇"
+      note: "武昌、汉口、汉阳三镇鼎立"
+    - startYear: 1927
+      endYear: 1948
+      name: "武昌市/汉口特别市"
+      note: "1927国民政府迁汉合称武汉"
+    - startYear: 1949
+      endYear: 2025
+      name: "武汉市"
+      note: "三镇合并设立直辖/副省级武汉市"
+  climate: "subtropical"
+  source: "《武汉市志·总述》"
+  confidence: "A"
+
+- id: "loc_chongqing"
+  currentName: "重庆"
+  region: "西南"
+  populationWeight: { "1900": 1.6, "1930": 2.5, "1953": 3.6, "1982": 5.5, "1999": 8.0 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1928
+      name: "重庆府巴县"
+      note: "川东商埠开埠"
+    - startYear: 1929
+      endYear: 1939
+      name: "重庆市"
+      note: "四川省辖重庆市"
+    - startYear: 1940
+      endYear: 1945
+      name: "重庆战时陪都"
+      note: "抗日战争战时首都大后方中心"
+    - startYear: 1946
+      endYear: 1996
+      name: "重庆市"
+      note: "四川省辖计划单列市"
+    - startYear: 1997
+      endYear: 2025
+      name: "重庆直辖市"
+      note: "1997年设立中央第四直辖市"
+  climate: "subtropical"
+  source: "《重庆市志》第一卷"
+  confidence: "A"
+
+- id: "loc_chengdu"
+  currentName: "成都"
+  region: "西南"
+  populationWeight: { "1900": 2.0, "1930": 2.4, "1953": 3.2, "1982": 4.8, "1999": 6.8 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1920
+      name: "成都府成都县"
+      note: "川西平原天府之国枢纽"
+    - startYear: 1921
+      endYear: 2025
+      name: "成都市"
+      note: "1921年成立市政筹备处，1928年正式设市"
+  climate: "subtropical"
+  source: "《成都市志·建置志》"
+  confidence: "A"
+
+- id: "loc_xian"
+  currentName: "西安"
+  region: "西北"
+  populationWeight: { "1900": 1.2, "1930": 1.5, "1953": 2.4, "1982": 3.8, "1999": 5.2 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1912
+      name: "西安府长安县"
+      note: "庚子国变慈禧光绪西巡驻跸"
+    - startYear: 1913
+      endYear: 1931
+      name: "长安县"
+      note: "废府留县"
+    - startYear: 1932
+      endYear: 1942
+      name: "西京筹备区"
+      note: "国民政府拟定西京陪都"
+    - startYear: 1943
+      endYear: 2025
+      name: "西安市"
+      note: "陕西省省会"
+  climate: "temperate"
+  source: "《西安市志》第一卷"
+  confidence: "A"
+
+- id: "loc_shenyang"
+  currentName: "沈阳"
+  region: "东北"
+  populationWeight: { "1900": 1.4, "1930": 2.2, "1953": 3.5, "1982": 4.6, "1999": 5.8 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1928
+      name: "奉天府奉天城"
+      note: "东北三省总督驻地与奉系核心"
+    - startYear: 1929
+      endYear: 1931
+      name: "沈阳市"
+      note: "东北易帜后更名沈阳市"
+    - startYear: 1932
+      endYear: 1945
+      name: "奉天市"
+      note: "伪满洲国统治时期复称奉天"
+    - startYear: 1946
+      endYear: 2025
+      name: "沈阳市"
+      note: "辽宁省省会与重工业重镇"
+  climate: "cold"
+  source: "《沈阳市志·建置沿革》"
+  confidence: "A"
+
+- id: "loc_harbin"
+  currentName: "哈尔滨"
+  region: "东北"
+  populationWeight: { "1900": 0.5, "1930": 1.8, "1953": 2.8, "1982": 3.9, "1999": 5.0 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1904
+      name: "吉林滨江厅"
+      note: "中东铁路交汇枢纽"
+    - startYear: 1905
+      endYear: 1931
+      name: "东省特别区哈尔滨"
+      note: "远东国际商埠与俄侨聚居区"
+    - startYear: 1932
+      endYear: 1945
+      name: "哈尔滨特别市"
+      note: "伪满统治时期哈尔滨特别市"
+    - startYear: 1946
+      endYear: 2025
+      name: "哈尔滨市"
+      note: "黑龙江省省会"
+  climate: "cold"
+  source: "《哈尔滨市志·总述》"
+  confidence: "A"
+
+- id: "loc_changchun"
+  currentName: "长春"
+  region: "东北"
+  populationWeight: { "1900": 0.4, "1930": 1.2, "1953": 2.2, "1982": 3.2, "1999": 4.5 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1931
+      name: "吉林长春厅"
+      note: "南满与中东铁路换装站"
+    - startYear: 1932
+      endYear: 1945
+      name: "新京特别市"
+      note: "伪满洲国首都"
+    - startYear: 1946
+      endYear: 2025
+      name: "长春市"
+      note: "吉林省省会，一汽汽车城"
+  climate: "cold"
+  source: "《长春市志》第一卷"
+  confidence: "A"
+
+- id: "loc_hangzhou"
+  currentName: "杭州"
+  region: "华东"
+  populationWeight: { "1900": 1.5, "1930": 2.0, "1953": 2.6, "1982": 3.6, "1999": 5.2 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "杭州府钱塘县"
+      note: "浙江巡抚驻地"
+    - startYear: 1912
+      endYear: 1926
+      name: "杭县"
+      note: "合钱塘仁和设杭县"
+    - startYear: 1927
+      endYear: 2025
+      name: "杭州市"
+      note: "1927年正式拆杭县设杭州市"
+  climate: "subtropical"
+  source: "《杭州市志》第一卷"
+  confidence: "A"
+
+- id: "loc_suzhou"
+  currentName: "苏州"
+  region: "华东"
+  populationWeight: { "1900": 1.6, "1930": 1.9, "1953": 2.3, "1982": 3.2, "1999": 4.9 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "苏州府吴县"
+      note: "江南丝织文萃之邦"
+    - startYear: 1912
+      endYear: 1948
+      name: "吴县"
+      note: "废府存县"
+    - startYear: 1949
+      endYear: 2025
+      name: "苏州市"
+      note: "划吴县城区设苏州市"
+  climate: "subtropical"
+  source: "《苏州市志·建置沿革》"
+  confidence: "A"
+
+- id: "loc_fuzhou"
+  currentName: "福州"
+  region: "华东"
+  populationWeight: { "1900": 1.3, "1930": 1.6, "1953": 2.0, "1982": 2.8, "1999": 4.0 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "福州府闽县"
+      note: "闽浙总督驻地与通商五口"
+    - startYear: 1912
+      endYear: 1945
+      name: "闽侯县"
+      note: "闽县侯官合并称闽侯县"
+    - startYear: 1946
+      endYear: 2025
+      name: "福州市"
+      note: "1946年正式设福州市"
+  climate: "subtropical"
+  source: "《福州市志·总述》"
+  confidence: "A"
+
+- id: "loc_xiamen"
+  currentName: "厦门"
+  region: "华东"
+  populationWeight: { "1900": 0.6, "1930": 0.9, "1953": 1.1, "1982": 1.8, "1999": 3.2 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "泉州府同安县厦门厅"
+      note: "鼓浪屿万国租界设立"
+    - startYear: 1912
+      endYear: 1934
+      name: "思明县"
+      note: "以郑成功思明州历史设思明县"
+    - startYear: 1935
+      endYear: 2025
+      name: "厦门市"
+      note: "1935年设厦门市，后为经济特区"
+  climate: "subtropical"
+  source: "《厦门市志》第一卷"
+  confidence: "A"
+
+- id: "loc_changsha"
+  currentName: "长沙"
+  region: "华中"
+  populationWeight: { "1900": 1.5, "1930": 1.9, "1953": 2.5, "1982": 3.5, "1999": 4.8 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "长沙府长沙县"
+      note: "湖湘学派与湘军故地"
+    - startYear: 1912
+      endYear: 1932
+      name: "长沙县"
+      note: "废府存县"
+    - startYear: 1933
+      endYear: 2025
+      name: "长沙市"
+      note: "1933设市，1938文夕大火"
+  climate: "subtropical"
+  source: "《长沙市志》第一卷"
+  confidence: "A"
+
+- id: "loc_jinan"
+  currentName: "济南"
+  region: "华东"
+  populationWeight: { "1900": 1.4, "1930": 1.8, "1953": 2.4, "1982": 3.4, "1999": 4.6 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "济南府历城县"
+      note: "山东巡抚驻地，自开商埠"
+    - startYear: 1912
+      endYear: 1928
+      name: "历城县"
+      note: "废府存县"
+    - startYear: 1929
+      endYear: 2025
+      name: "济南市"
+      note: "1929年设立济南市"
+  climate: "temperate"
+  source: "《济南通志·建置志》"
+  confidence: "A"
+
+- id: "loc_qingdao"
+  currentName: "青岛"
+  region: "华东"
+  populationWeight: { "1900": 0.4, "1930": 1.2, "1953": 2.1, "1982": 3.2, "1999": 4.8 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1913
+      name: "德租胶澳租借地"
+      note: "德国强租胶州湾时期"
+    - startYear: 1914
+      endYear: 1921
+      name: "日占胶澳"
+      note: "一战日德战争日本占领"
+    - startYear: 1922
+      endYear: 1928
+      name: "胶澳商埠"
+      note: "华盛顿会议后中国收回主权"
+    - startYear: 1929
+      endYear: 2025
+      name: "青岛特别市"
+      note: "1929年设立青岛市，沿海港口重镇"
+  climate: "temperate"
+  source: "《青岛市志·政区志》"
+  confidence: "A"
+
+- id: "loc_zhengzhou"
+  currentName: "郑州"
+  region: "华中"
+  populationWeight: { "1900": 0.5, "1930": 1.1, "1953": 2.0, "1982": 3.4, "1999": 5.2 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1912
+      name: "开封府郑州"
+      note: "京汉铁路与陇海铁路交汇"
+    - startYear: 1913
+      endYear: 1947
+      name: "郑县"
+      note: "改郑州为郑县"
+    - startYear: 1948
+      endYear: 2025
+      name: "郑州市"
+      note: "1948解放设市，1954升为河南省会"
+  climate: "temperate"
+  source: "《郑州市志·建置沿革》"
+  confidence: "A"
+
+- id: "loc_luoyang"
+  currentName: "洛阳"
+  region: "华中"
+  populationWeight: { "1900": 0.8, "1930": 1.0, "1953": 1.5, "1982": 2.4, "1999": 3.6 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "河南府洛阳县"
+      note: "十三朝古都"
+    - startYear: 1912
+      endYear: 1947
+      name: "洛阳县"
+      note: "1932年曾为行都"
+    - startYear: 1948
+      endYear: 2025
+      name: "洛阳市"
+      note: "一五时期重点重工业城市"
+  climate: "temperate"
+  source: "《洛阳市志》第一卷"
+  confidence: "A"
+
+- id: "loc_taiyuan"
+  currentName: "太原"
+  region: "华北"
+  populationWeight: { "1900": 0.9, "1930": 1.3, "1953": 1.9, "1982": 2.8, "1999": 4.0 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "太原府阳曲县"
+      note: "山西巡抚驻地"
+    - startYear: 1912
+      endYear: 1926
+      name: "阳曲县"
+      note: "阎锡山晋系统治策源地"
+    - startYear: 1927
+      endYear: 2025
+      name: "太原市"
+      note: "1927年设立太原市"
+  climate: "temperate"
+  source: "《太原市志·建置志》"
+  confidence: "A"
+
+- id: "loc_kunming"
+  currentName: "昆明"
+  region: "西南"
+  populationWeight: { "1900": 0.8, "1930": 1.2, "1953": 1.7, "1982": 2.6, "1999": 3.9 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "云南府昆明县"
+      note: "云贵总督驻地，滇越铁路通车"
+    - startYear: 1912
+      endYear: 1921
+      name: "昆明县"
+      note: "护国运动发轫地"
+    - startYear: 1922
+      endYear: 2025
+      name: "昆明市"
+      note: "1922设立市政公所，抗战西南联大基地"
+  climate: "subtropical"
+  source: "《昆明市志·建置区划》"
+  confidence: "A"
+
+- id: "loc_guiyang"
+  currentName: "贵阳"
+  region: "西南"
+  populationWeight: { "1900": 0.6, "1930": 0.8, "1953": 1.2, "1982": 2.0, "1999": 3.2 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1912
+      name: "贵阳府贵筑县"
+      note: "黔中要塞，贵州巡抚驻地"
+    - startYear: 1913
+      endYear: 1940
+      name: "贵阳县/贵筑县"
+      note: "废府设县"
+    - startYear: 1941
+      endYear: 2025
+      name: "贵阳市"
+      note: "1941年正式撤县设贵阳市"
+  climate: "subtropical"
+  source: "《贵阳市志》第一卷"
+  confidence: "A"
+
+- id: "loc_nanning"
+  currentName: "南宁"
+  region: "华南"
+  populationWeight: { "1900": 0.5, "1930": 0.8, "1953": 1.2, "1982": 2.1, "1999": 3.4 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "南宁府邕宁县"
+      note: "左江右江汇流商埠"
+    - startYear: 1912
+      endYear: 1948
+      name: "邕宁县"
+      note: "桂系统治中心"
+    - startYear: 1949
+      endYear: 2025
+      name: "南宁市"
+      note: "广西壮族自治区首府"
+  climate: "tropical"
+  source: "《南宁市志》第一卷"
+  confidence: "A"
+
+- id: "loc_lanzhou"
+  currentName: "兰州"
+  region: "西北"
+  populationWeight: { "1900": 0.6, "1930": 0.9, "1953": 1.5, "1982": 2.4, "1999": 3.5 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1912
+      name: "兰州府皋兰县"
+      note: "陕甘总督驻地，黄河第一桥"
+    - startYear: 1913
+      endYear: 1940
+      name: "皋兰县"
+      note: "废府设县"
+    - startYear: 1941
+      endYear: 2025
+      name: "兰州市"
+      note: "1941年设立兰州市，西北石化中心"
+  climate: "arid"
+  source: "《兰州市志·建置志》"
+  confidence: "A"
+
+- id: "loc_urumqi"
+  currentName: "乌鲁木齐"
+  region: "西北"
+  populationWeight: { "1900": 0.3, "1930": 0.5, "1953": 0.9, "1982": 1.6, "1999": 2.8 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1912
+      name: "迪化府迪化县"
+      note: "新疆建省后巡抚驻地"
+    - startYear: 1913
+      endYear: 1953
+      name: "迪化市"
+      note: "西北边陲军政中心"
+    - startYear: 1954
+      endYear: 2025
+      name: "乌鲁木齐市"
+      note: "1954年恢复原蒙古语地名乌鲁木齐"
+  climate: "arid"
+  source: "《乌鲁木齐市志》第一卷"
+  confidence: "A"
+
+- id: "loc_hohhot"
+  currentName: "呼和浩特"
+  region: "华北"
+  populationWeight: { "1900": 0.4, "1930": 0.7, "1953": 1.1, "1982": 1.8, "1999": 2.7 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1913
+      name: "归绥厅归化城"
+      note: "归化城与绥远城并立，塞外茶道商埠"
+    - startYear: 1914
+      endYear: 1953
+      name: "归绥市"
+      note: "绥远省省会归绥市"
+    - startYear: 1954
+      endYear: 2025
+      name: "呼和浩特市"
+      note: "1954年内蒙古自治区首府迁此改名呼和浩特"
+  climate: "temperate"
+  source: "《呼和浩特市志》第一卷"
+  confidence: "A"
+
+- id: "loc_taipei"
+  currentName: "台北"
+  region: "华南"
+  populationWeight: { "1900": 0.8, "1930": 1.3, "1953": 2.0, "1982": 3.0, "1999": 4.2 }
+  historicalNames:
+    - startYear: 1900
+      endYear: 1919
+      name: "台北厅大加蚋堡"
+      note: "乙未割台日本殖民统治前期"
+    - startYear: 1920
+      endYear: 1944
+      name: "台北州台北市"
+      note: "日治台湾总督府设台北市"
+    - startYear: 1945
+      endYear: 2025
+      name: "台北市"
+      note: "1945年抗战胜利台湾光复设立省辖/院辖市"
+  climate: "subtropical"
+  source: "《台北市志·卷三政事志》"
   confidence: "A"

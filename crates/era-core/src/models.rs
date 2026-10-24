@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 
+use crate::currency::CurrencyDisplay;
+
 /// 角色基础属性包（四维属性，取值范围 0..=100）
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
@@ -36,6 +38,29 @@ impl Attributes {
         self.mood += dm;
         self.insight += di;
         self.clamp();
+    }
+}
+
+/// 性格倾向（用于快进模式下的次要抉择自动判定）
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub enum PersonalityTrait {
+    Scholar,      // 尚儒笃学（崇尚读书与见识）
+    Enterprising, // 敢为人先（勇于开拓与追求财富，敢冒适度风险）
+    Pragmatic,    // 务实稳健（注重健康与家财保全，厌恶风险）
+    Harmonious,   // 豁达随缘（重视心情与身心平衡）
+    Idealist,     // 家国热血（重视理想抱负与见识）
+}
+
+impl PersonalityTrait {
+    pub fn description(&self) -> &'static str {
+        match self {
+            Self::Scholar => "尚儒笃学",
+            Self::Enterprising => "敢为人先",
+            Self::Pragmatic => "务实稳健",
+            Self::Harmonious => "豁达随缘",
+            Self::Idealist => "家国热血",
+        }
     }
 }
 
@@ -78,6 +103,46 @@ impl CauseOfDeath {
     }
 }
 
+/// 待生效的延迟后果队列项（3-10年显现）
+#[derive(Clone, Debug, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct PendingDelayedConsequence {
+    pub source_event_id: String,
+    pub target_year: u16,
+    pub dh: i32,
+    pub dk: i32,
+    pub dm: i32,
+    pub di: i32,
+    pub d_wealth: i32,
+    pub message: String,
+}
+
+/// 抉择分支视图
+#[derive(Clone, Debug, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct ActiveChoiceOption {
+    pub id: String,
+    pub text: String,
+    pub dh: i32,
+    pub dk: i32,
+    pub dm: i32,
+    pub di: i32,
+    pub d_wealth: i32,
+    pub risk: Option<f64>,
+}
+
+/// 当前待玩家做出决断的事件视图
+#[derive(Clone, Debug, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct ActiveEventPrompt {
+    pub event_id: String,
+    pub tier: String,
+    pub title: String,
+    pub narrative: String,
+    pub is_crossroads: bool,
+    pub choices: Vec<ActiveChoiceOption>,
+}
+
 /// 人生年鉴记录
 #[derive(Clone, Debug, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
@@ -86,7 +151,7 @@ pub struct LifeLogEntry {
     pub age: u16,
     pub title: String,
     pub content: String,
-    pub category: String, // "destiny", "era", "life", "health"
+    pub category: String, // "destiny", "era", "life", "health", "delayed"
 }
 
 /// 个人生命实体
@@ -105,6 +170,10 @@ pub struct Person {
     pub death_age: Option<u16>,
     pub cause_of_death: Option<CauseOfDeath>,
     pub attributes: Attributes,
+    pub wealth_ppp: i32,                         // 内部购买力点数（PPP）
+    pub personality: PersonalityTrait,           // 性格倾向
+    pub pending_delayed: Vec<PendingDelayedConsequence>, // 待生效延迟后果
+    pub triggered_events: Vec<String>,           // 已经历的历史/人生事件ID
     pub log: Vec<LifeLogEntry>,
 }
 
@@ -119,4 +188,8 @@ pub struct SimulationState {
     pub peers: Vec<Person>,
     pub is_game_over: bool,
     pub can_switch_peer: bool, // 是否允许早夭移魂
+    pub pending_choice: Option<ActiveEventPrompt>,
+    pub birth_historical_name: String,
+    pub birth_current_name: String,
+    pub current_currency: CurrencyDisplay,
 }

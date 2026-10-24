@@ -1,66 +1,21 @@
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 
+use crate::currency::format_currency;
+use crate::data::{
+    get_era_data, sample_birth_location, LocationData,
+};
 use crate::destiny::evaluate_destiny;
-use crate::models::{Attributes, CauseOfDeath, Gender, LifeLogEntry, Person, SimulationState};
+use crate::event_engine::{
+    apply_narrative_event, build_active_event_prompt, find_applicable_era_event,
+    find_applicable_life_event, pick_choice_by_personality, resolve_event_choice,
+    tick_delayed_consequences,
+};
+use crate::models::{
+    ActiveEventPrompt, Attributes, CauseOfDeath, Gender, LifeLogEntry, Person, PersonalityTrait,
+    SimulationState,
+};
 use crate::prng::DeterministicRng;
-
-/// 预设地点基础信息（供内核加权采样）
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct LocationSample {
-    pub id: String,
-    pub name: String,
-    pub region: String,
-    pub base_weight: f64,
-}
-
-/// 默认基础地点列表（包含中国各大地理大区代表性城镇与乡村）
-pub fn get_default_locations() -> Vec<LocationSample> {
-    vec![
-        LocationSample {
-            id: "loc_beijing".to_string(),
-            name: "北京".to_string(),
-            region: "华北".to_string(),
-            base_weight: 1.5,
-        },
-        LocationSample {
-            id: "loc_shanghai".to_string(),
-            name: "上海".to_string(),
-            region: "华东".to_string(),
-            base_weight: 2.5,
-        },
-        LocationSample {
-            id: "loc_shenzhen".to_string(),
-            name: "深圳".to_string(),
-            region: "华南".to_string(),
-            base_weight: 0.5,
-        },
-        LocationSample {
-            id: "loc_wuhan".to_string(),
-            name: "武汉".to_string(),
-            region: "华中".to_string(),
-            base_weight: 2.0,
-        },
-        LocationSample {
-            id: "loc_chengdu".to_string(),
-            name: "成都".to_string(),
-            region: "西南".to_string(),
-            base_weight: 2.2,
-        },
-        LocationSample {
-            id: "loc_xian".to_string(),
-            name: "西安".to_string(),
-            region: "西北".to_string(),
-            base_weight: 1.4,
-        },
-        LocationSample {
-            id: "loc_shenyang".to_string(),
-            name: "沈阳".to_string(),
-            region: "东北".to_string(),
-            base_weight: 1.8,
-        },
-    ]
-}
 
 /// 蒙特卡洛单个年代统计报告
 #[derive(Clone, Debug, Serialize, Deserialize, Tsify)]
@@ -83,12 +38,13 @@ pub struct MonteCarloDecadeReport {
 pub struct SimulationKernel {
     pub rng: DeterministicRng,
     pub birth_year: u16,
-    pub birth_location: LocationSample,
+    pub birth_location: LocationData,
     pub protagonist: Person,
     pub peers: Vec<Person>, // 4名同乡同龄人
     pub active_index: usize,
     pub is_game_over: bool,
     pub can_switch_peer: bool,
+    pub pending_choice: Option<ActiveEventPrompt>,
 }
 
 impl SimulationKernel {
@@ -101,17 +57,14 @@ impl SimulationKernel {
             rng.gen_range_inclusive_i32(1900, 1999) as u16
         });
 
-        // 依据人口权重采样出生地
-        let locations = get_default_locations();
-        let weights: Vec<f64> = locations.iter().map(|l| l.base_weight).collect();
-        let loc_idx = rng.choose_weighted(&weights);
-        let birth_location = locations[loc_idx].clone();
+        // 依据当年各省县人口加权采样出生地（覆盖全中国30个代表性地点）
+        let birth_location = sample_birth_location(birth_year, &mut rng);
 
         // 创建主角
         let protagonist = Self::create_person(
             0,
             birth_year,
-            &birth_location.id,
+            &birth_location,
             Gender::Male,
             "主角",
             &mut rng,
@@ -129,7 +82,7 @@ impl SimulationKernel {
             let peer = Self::create_person(
                 (i + 1) as u32,
                 birth_year,
-                &birth_location.id,
+                &birth_location,
                 gender,
                 name,
                 &mut rng,
@@ -146,13 +99,14 @@ impl SimulationKernel {
             active_index: 0,
             is_game_over: false,
             can_switch_peer: false,
+            pending_choice: None,
         }
     }
 
     fn create_person(
         id: u32,
         birth_year: u16,
-        location_id: &str,
+        location: &LocationData,
         gender: Gender,
         name: &str,
         rng: &mut DeterministicRng,
@@ -161,6 +115,15 @@ impl SimulationKernel {
         let init_knowledge = rng.gen_range_inclusive_i32(15, 25);
         let init_mood = rng.gen_range_inclusive_i32(55, 75);
         let init_insight = rng.gen_range_inclusive_i32(10, 20);
+        let init_wealth = rng.gen_range_inclusive_i32(30, 60);
+
+        let personality = match rng.gen_range_inclusive_i32(0, 4) {
+            0 => PersonalityTrait::Scholar,
+            1 => PersonalityTrait::Enterprising,
+            2 => PersonalityTrait::Pragmatic,
+            3 => PersonalityTrait::Harmonious,
+            _ => PersonalityTrait::Idealist,
+        };
 
         let attributes = Attributes {
             health: init_health,
@@ -169,12 +132,23 @@ impl SimulationKernel {
             insight: init_insight,
         };
 
+        let (hist_name, note) = location.get_historical_name(birth_year);
+        let birth_desc = if hist_name != location.current_name {
+            if let Some(n) = note {
+                format!("{birth_year}年，你降生在{hist_name}（今{}）。（{}）", location.current_name, n)
+            } else {
+                format!("{birth_year}年，你降生在{hist_name}（今{}）。", location.current_name)
+            }
+        } else {
+            format!("{birth_year}年，你降生在{}。", location.current_name)
+        };
+
         Person {
             id,
             name: name.to_string(),
             gender,
             birth_year,
-            birth_location_id: location_id.to_string(),
+            birth_location_id: location.id.clone(),
             current_year: birth_year,
             age: 0,
             is_alive: true,
@@ -182,11 +156,15 @@ impl SimulationKernel {
             death_age: None,
             cause_of_death: None,
             attributes,
+            wealth_ppp: init_wealth,
+            personality,
+            pending_delayed: Vec::new(),
+            triggered_events: Vec::new(),
             log: vec![LifeLogEntry {
                 year: birth_year,
                 age: 0,
                 title: "降生人世".to_string(),
-                content: format!("{birth_year}年，你诞生在中华大地上。"),
+                content: birth_desc,
                 category: "destiny".to_string(),
             }],
         }
@@ -201,18 +179,19 @@ impl SimulationKernel {
         }
     }
 
-    /// 获取当前操纵的角色可变引用
-    pub fn active_person_mut(&mut self) -> &mut Person {
-        if self.active_index == 0 {
+    /// 获取当前操纵的角色与随机数发生器的互斥双借用（满足借用检查器互斥字段借用规则）
+    pub fn active_person_and_rng_mut(&mut self) -> (&mut Person, &mut DeterministicRng) {
+        let rng = &mut self.rng;
+        let person = if self.active_index == 0 {
             &mut self.protagonist
         } else {
             &mut self.peers[self.active_index - 1]
-        }
+        };
+        (person, rng)
     }
 
     /// 切换为“同年同县出生的另外四人”之一继续游玩（早夭移魂）
     pub fn switch_to_peer(&mut self, peer_index: usize) -> bool {
-        // 只有在早夭且目标同乡健在时方可切换
         if !self.can_switch_peer || peer_index >= self.peers.len() {
             return false;
         }
@@ -224,13 +203,53 @@ impl SimulationKernel {
         self.active_index = peer_index + 1;
         self.can_switch_peer = false;
         self.is_game_over = false;
+        self.pending_choice = None;
         true
+    }
+
+    /// 做出抉择响应当前待决断事件
+    pub fn make_choice(&mut self, choice_id: &str) -> Result<SimulationState, String> {
+        let prompt = self
+            .pending_choice
+            .as_ref()
+            .ok_or_else(|| "No pending event choice to make".to_string())?;
+
+        let event_id = prompt.event_id.clone();
+        let data = get_era_data();
+        let raw_evt = data
+            .events
+            .iter()
+            .find(|e| e.id == event_id)
+            .ok_or_else(|| format!("Event {} not found in database", event_id))?;
+
+        let (active, rng) = self.active_person_and_rng_mut();
+        resolve_event_choice(active, raw_evt, choice_id, rng)?;
+
+        // 抉择完毕，清除悬挂状态
+        self.pending_choice = None;
+        Ok(self.get_state())
     }
 
     /// 推进一年（核心时钟滴答）
     pub fn step_year(&mut self) -> SimulationState {
         if self.is_game_over {
             return self.get_state();
+        }
+
+        // 若当前有等待选择的事件且调用者直接步进，自动依据性格倾向决断，防止无限空转
+        if let Some(ref prompt) = self.pending_choice {
+            let event_id = prompt.event_id.clone();
+            let data = get_era_data();
+            if let Some(raw_evt) = data.events.iter().find(|e| e.id == event_id) {
+                if let Some(ref choices) = raw_evt.choices {
+                    let personality = self.active_person().personality;
+                    let picked = pick_choice_by_personality(personality, choices);
+                    let choice_id = picked.id.clone();
+                    let (active, rng) = self.active_person_and_rng_mut();
+                    let _ = resolve_event_choice(active, raw_evt, &choice_id, rng);
+                }
+            }
+            self.pending_choice = None;
         }
 
         let region = self.birth_location.region.clone();
@@ -263,7 +282,10 @@ impl SimulationKernel {
             &mut self.peers[self.active_index - 1]
         };
 
-        // 判断是否平安抵达 2025 年
+        // 2.1 检查并生效延迟后果（3-10年显现的因果回响）
+        tick_delayed_consequences(active, active.current_year);
+
+        // 2.2 判断是否平安抵达 2025 年
         if active.current_year >= 2025 {
             active.is_alive = true;
             active.cause_of_death = Some(CauseOfDeath::SurviveTo2025);
@@ -279,7 +301,7 @@ impl SimulationKernel {
             return self.get_state();
         }
 
-        // 执行当前活跃角色的命运层判定
+        // 2.3 执行命运层生死大限判定
         let res = evaluate_destiny(active, &region, &mut self.rng);
 
         let mut died = false;
@@ -313,33 +335,131 @@ impl SimulationKernel {
             if age_at_death < 18 && has_living_peer {
                 self.can_switch_peer = true;
             }
+            return self.get_state();
         }
 
+        // 2.4 若存活，进入时代层 (Era) 判定
+        if let Some(era_evt) = find_applicable_era_event(active, &self.birth_location) {
+            if era_evt.choices.is_some() {
+                self.pending_choice = Some(build_active_event_prompt(era_evt));
+                return self.get_state();
+            } else {
+                apply_narrative_event(active, era_evt);
+            }
+        } else {
+            // 2.5 若本年未触发时代大事件，进入人生层 (Life) 判定
+            if let Some(life_evt) =
+                find_applicable_life_event(active, &self.birth_location, &mut self.rng)
+            {
+                if life_evt.choices.is_some() {
+                    self.pending_choice = Some(build_active_event_prompt(life_evt));
+                    return self.get_state();
+                } else {
+                    apply_narrative_event(active, life_evt);
+                }
+            }
+        }
+
+        self.get_state()
+    }
+
+    /// 快进模式自适应步进：次要事件按性格倾向自动决断，仅在关键岔路口（is_crossroads）暂停
+    pub fn step_year_auto(&mut self) -> SimulationState {
+        if self.is_game_over {
+            return self.get_state();
+        }
+
+        // 1. 若当前已经有悬挂事件待选择
+        if let Some(ref prompt) = self.pending_choice {
+            if prompt.is_crossroads {
+                // 属于重大人生关口，坚决暂停等待玩家亲决
+                return self.get_state();
+            } else {
+                let event_id = prompt.event_id.clone();
+                let data = get_era_data();
+                if let Some(raw_evt) = data.events.iter().find(|e| e.id == event_id) {
+                    if let Some(ref choices) = raw_evt.choices {
+                        let personality = self.active_person().personality;
+                        let picked = pick_choice_by_personality(personality, choices);
+                        let choice_id = picked.id.clone();
+                        let (active, rng) = self.active_person_and_rng_mut();
+                        let _ = resolve_event_choice(active, raw_evt, &choice_id, rng);
+                    }
+                }
+                self.pending_choice = None;
+            }
+        }
+
+        // 2. 执行步进
+        self.step_year();
+
+        // 3. 步进后若新触发了事件且非重大关口，自动按性格抉择以实现流畅快进
+        if let Some(ref prompt) = self.pending_choice {
+            if !prompt.is_crossroads {
+                let event_id = prompt.event_id.clone();
+                let data = get_era_data();
+                if let Some(raw_evt) = data.events.iter().find(|e| e.id == event_id) {
+                    if let Some(ref choices) = raw_evt.choices {
+                        let personality = self.active_person().personality;
+                        let picked = pick_choice_by_personality(personality, choices);
+                        let choice_id = picked.id.clone();
+                        let (active, rng) = self.active_person_and_rng_mut();
+                        let _ = resolve_event_choice(active, raw_evt, &choice_id, rng);
+                    }
+                }
+                self.pending_choice = None;
+            }
+        }
+
+        self.get_state()
+    }
+
+    /// 连续模拟直至人生终局（自动按性格倾向做全部抉择，供蒙特卡洛及极速模式）
+    pub fn run_to_end(&mut self) -> SimulationState {
+        while !self.is_game_over {
+            if let Some(ref prompt) = self.pending_choice {
+                let event_id = prompt.event_id.clone();
+                let data = get_era_data();
+                if let Some(raw_evt) = data.events.iter().find(|e| e.id == event_id) {
+                    if let Some(ref choices) = raw_evt.choices {
+                        let personality = self.active_person().personality;
+                        let picked = pick_choice_by_personality(personality, choices);
+                        let choice_id = picked.id.clone();
+                        let (active, rng) = self.active_person_and_rng_mut();
+                        let _ = resolve_event_choice(active, raw_evt, &choice_id, rng);
+                    }
+                }
+                self.pending_choice = None;
+            }
+            self.step_year_auto();
+        }
         self.get_state()
     }
 
     /// 获取当前完整的快照状态
     pub fn get_state(&self) -> SimulationState {
+        let active = self.active_person();
+        let (hist_name, _) = self
+            .birth_location
+            .get_historical_name(self.birth_year);
+        let currency = format_currency(active.current_year, active.wealth_ppp);
+
         SimulationState {
             seed: self.rng.seed(),
-            current_year: self.active_person().current_year,
+            current_year: active.current_year,
             active_index: self.active_index,
             protagonist: self.protagonist.clone(),
             peers: self.peers.clone(),
             is_game_over: self.is_game_over,
             can_switch_peer: self.can_switch_peer,
+            pending_choice: self.pending_choice.clone(),
+            birth_historical_name: hist_name.to_string(),
+            birth_current_name: self.birth_location.current_name.clone(),
+            current_currency: currency,
         }
     }
 
-    /// 持续模拟直至终结（死亡或抵达2025年）
-    pub fn run_to_end(&mut self) -> SimulationState {
-        while !self.is_game_over {
-            self.step_year();
-        }
-        self.get_state()
-    }
-
-    /// 蒙特卡洛年代模拟与对齐检验
+    /// 蒙特卡洛统计检验工具（保持时期生命表校准）
     pub fn run_monte_carlo(decade: u16, count: usize) -> MonteCarloDecadeReport {
         use crate::demographics::get_life_table_for_year;
 
@@ -388,15 +508,12 @@ impl SimulationKernel {
                 if da < 5 {
                     under_5_deaths += 1;
                 }
-                if decade + da >= 2025 {
-                    reached_2025 += 1;
-                }
-            } else {
-                reached_2025 += 1;
             }
-
             if final_age >= 60.0 {
                 reached_60 += 1;
+            }
+            if (decade as f64 + final_age) >= 2025.0 {
+                reached_2025 += 1;
             }
         }
 

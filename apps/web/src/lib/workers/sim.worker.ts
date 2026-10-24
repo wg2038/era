@@ -19,6 +19,8 @@ async function ensureWasm() {
 export type WorkerMessage =
   | { type: 'INIT'; seed?: bigint | number; birthYear?: number }
   | { type: 'STEP' }
+  | { type: 'STEP_AUTO' }
+  | { type: 'MAKE_CHOICE'; choiceId: string }
   | { type: 'RUN_TO_END' }
   | { type: 'SWITCH_PEER'; peerIndex: number }
   | { type: 'RUN_MONTE_CARLO'; decade: number; count: number }
@@ -47,6 +49,20 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
       case 'STEP': {
         if (!simulation) throw new Error('Simulation not initialized');
         const state = simulation.step_year() as SimulationState;
+        self.postMessage({ type: 'STATE', state });
+        break;
+      }
+
+      case 'STEP_AUTO': {
+        if (!simulation) throw new Error('Simulation not initialized');
+        const state = simulation.step_year_auto() as SimulationState;
+        self.postMessage({ type: 'STATE', state });
+        break;
+      }
+
+      case 'MAKE_CHOICE': {
+        if (!simulation) throw new Error('Simulation not initialized');
+        const state = simulation.make_choice(msg.choiceId) as SimulationState;
         self.postMessage({ type: 'STATE', state });
         break;
       }

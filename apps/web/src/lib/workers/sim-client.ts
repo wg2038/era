@@ -42,6 +42,18 @@ export class SimulationWorkerClient {
     throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
   }
 
+  async stepAuto(): Promise<SimulationState> {
+    const res = await this.send({ type: 'STEP_AUTO' });
+    if (res.type === 'STATE') return res.state;
+    throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
+  }
+
+  async makeChoice(choiceId: string): Promise<SimulationState> {
+    const res = await this.send({ type: 'MAKE_CHOICE', choiceId });
+    if (res.type === 'STATE') return res.state;
+    throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
+  }
+
   async runToEnd(): Promise<SimulationState> {
     const res = await this.send({ type: 'RUN_TO_END' });
     if (res.type === 'STATE') return res.state;

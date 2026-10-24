@@ -1,6 +1,9 @@
+pub mod currency;
+pub mod data;
 pub mod demographics;
 pub mod destiny;
 pub mod engine;
+pub mod event_engine;
 pub mod models;
 pub mod prng;
 
@@ -40,6 +43,24 @@ impl WasmSimulation {
         let state = self.inner.step_year();
         serde_wasm_bindgen::to_value(&state)
             .map_err(|e| JsValue::from_str(&format!("Serialization error: {e}")))
+    }
+
+    /// 快进模式自适应步进（次要抉择自动判定，仅在重大关口暂停）
+    pub fn step_year_auto(&mut self) -> Result<JsValue, JsValue> {
+        let state = self.inner.step_year_auto();
+        serde_wasm_bindgen::to_value(&state)
+            .map_err(|e| JsValue::from_str(&format!("Serialization error: {e}")))
+    }
+
+    /// 做出抉择
+    pub fn make_choice(&mut self, choice_id: &str) -> Result<JsValue, JsValue> {
+        self.inner
+            .make_choice(choice_id)
+            .map_err(|e| JsValue::from_str(&e))
+            .and_then(|state| {
+                serde_wasm_bindgen::to_value(&state)
+                    .map_err(|e| JsValue::from_str(&format!("Serialization error: {e}")))
+            })
     }
 
     /// 获取完整快照状态
