@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @era/web dev",
-    "build": "pnpm run build:core && pnpm run build:data && pnpm --filter @era/web build",
+    "build": "pnpm run build:data && pnpm run build:core && pnpm --filter @era/web build",
     "build:core": "wasm-pack build crates/era-core --target web --out-dir ../../packages/core-wasm --scope era",
     "build:data": "pnpm --filter @era/data build",
     "test": "vitest run",
