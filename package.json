@@ -11,6 +11,7 @@
     "build:data": "pnpm --filter @era/data build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "test:core": "cargo test --manifest-path crates/era-core/Cargo.toml --test determinism --lib",
     "test:monte-carlo": "cargo test --manifest-path crates/era-core/Cargo.toml --test monte_carlo --release -- --nocapture",
     "check": "pnpm --filter @era/data check && pnpm --filter @era/web check",

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="100" fill="#181512" stroke="#5a4933" stroke-width="12"/>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#c79a5b" stroke-width="4" stroke-dasharray="16 8"/>
+  <text x="256" y="295" font-family="'Noto Serif SC', 'Songti SC', serif" font-size="190" font-weight="bold" fill="#f3efe6" text-anchor="middle">代</text>
+  <text x="256" y="400" font-family="sans-serif" font-size="34" letter-spacing="8" font-weight="600" fill="#c79a5b" text-anchor="middle">ERA · 1900-2025</text>
+</svg>

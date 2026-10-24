@@ -27,7 +27,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm --filter @era/web preview',
+    command: 'pnpm --filter @era/web preview --port 5173',
     port: 5173,
     reuseExistingServer: !process.env.CI,
   },

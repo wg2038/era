@@ -1,0 +1,18 @@
+{
+  "name": "Era - 时代（中国百年人生模拟）",
+  "short_name": "Era",
+  "description": "基于历史真实人口学生命表与重大事件演进的确定性 WebAssembly 浏览器文字模拟游戏",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#161412",
+  "theme_color": "#c79a5b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -10,6 +10,12 @@
   } from '../lib/pacing';
   import InkAtmosphereCanvas from '../lib/components/InkAtmosphereCanvas.svelte';
   import EndingSummary from '../lib/components/EndingSummary.svelte';
+  import {
+    exportSaveAsJSON,
+    importSaveFromJSON,
+    loadLatestSave,
+    saveGameState,
+  } from '../lib/storage/save-manager';
 
   let client: SimulationWorkerClient | null = null;
   let isReady: boolean = $state(false);
@@ -18,6 +24,8 @@
   let customBirthYear: number | undefined = $state(undefined);
   let mcReports: MonteCarloDecadeReport[] = $state([]);
   let isRunningMc: boolean = $state(false);
+  let hasSavedGame: boolean = $state(false);
+  let fileInputEl: HTMLInputElement | null = $state(null);
 
   // 自适应节奏状态 (M3 阶段)
   let isPlaying: boolean = $state(false);
@@ -56,12 +64,46 @@
   onMount(async () => {
     client = new SimulationWorkerClient();
     try {
+      const existingSave = await loadLatestSave();
+      if (existingSave) {
+        hasSavedGame = true;
+      }
       simState = await client.init(42n);
       isReady = true;
     } catch (err) {
       console.error('Failed to initialize simulation worker:', err);
     }
   });
+
+  $effect(() => {
+    if (simState) {
+      saveGameState(simState);
+    }
+  });
+
+  async function loadSavedGame() {
+    const saved = await loadLatestSave();
+    if (saved) {
+      simState = saved;
+    }
+  }
+
+  function exportCurrentSave() {
+    if (simState) {
+      exportSaveAsJSON(simState);
+    }
+  }
+
+  async function handleImportFile(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (target.files && target.files[0]) {
+      try {
+        simState = await importSaveFromJSON(target.files[0]);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : '导入存档失败');
+      }
+    }
+  }
 
   onDestroy(() => {
     client?.terminate();
@@ -235,6 +277,33 @@
           <option value={5}>5.0x 速率</option>
           <option value={10}>10.0x 超高速</option>
         </select>
+      </div>
+    </div>
+
+    <!-- 存档与存储管理工具条 (M5 核心) -->
+    <div class="storage-bar">
+      <div class="storage-info">
+        💾 <strong>存档体系</strong>：IndexedDB 逐年自动存档已激活
+      </div>
+      <div class="storage-actions">
+        {#if hasSavedGame}
+          <button class="btn btn-tiny-action" onclick={loadSavedGame}>
+            📂 读取最近存档
+          </button>
+        {/if}
+        <button class="btn btn-tiny-action" onclick={exportCurrentSave} disabled={!simState}>
+          📤 导出存档 (JSON)
+        </button>
+        <button class="btn btn-tiny-action" onclick={() => fileInputEl?.click()}>
+          📥 导入存档 (JSON)
+        </button>
+        <input
+          bind:this={fileInputEl}
+          type="file"
+          accept=".json"
+          style="display: none;"
+          onchange={handleImportFile}
+        />
       </div>
     </div>
   </section>
@@ -961,6 +1030,42 @@
     border-radius: 4px;
     padding: 0.25rem 0.5rem;
     font-size: 0.8rem;
+  }
+  .storage-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    background: #141210;
+    border: 1px dashed #3d352b;
+    border-radius: 6px;
+    padding: 0.5rem 0.85rem;
+    margin-top: 0.6rem;
+    gap: 0.5rem;
+  }
+  .storage-info {
+    font-size: 0.78rem;
+    color: #a8a29e;
+  }
+  .storage-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .btn-tiny-action {
+    background: #201c19;
+    border: 1px solid #4a3e2f;
+    border-radius: 4px;
+    color: #d1c7b7;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-tiny-action:hover:not(:disabled) {
+    background: #2e2822;
+    border-color: #c79a5b;
+    color: #f3efe6;
   }
 
   /* 社交与亲属卡片体系 (M3) */

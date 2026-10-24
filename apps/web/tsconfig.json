@@ -15,5 +15,5 @@
     "sourceMap": true
   },
   "include": ["src", "test", "*"],
-  "exclude": ["src/service-worker"]
+  "exclude": ["src/service-worker.ts", "src/service-worker"]
 }
