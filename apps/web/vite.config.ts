@@ -13,7 +13,11 @@ export default defineConfig({
         strict: true,
       }),
       paths: {
-        base: (process.env.BASE_PATH ? (process.env.BASE_PATH as `/${string}`) : (process.env.GITHUB_ACTIONS ? '/era' : '')),
+        base: process.env.BASE_PATH
+          ? (process.env.BASE_PATH as `/${string}`)
+          : process.env.GITHUB_ACTIONS
+            ? '/era'
+            : '',
       },
     }),
   ],

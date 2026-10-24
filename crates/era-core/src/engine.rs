@@ -12,8 +12,8 @@ use crate::event_engine::{
     tick_delayed_consequences,
 };
 use crate::models::{
-    ActiveEventPrompt, Attributes, CauseOfDeath, Gender, LifeLogEntry, Person, PersonalityTrait,
-    SimulationState,
+    ActiveEventPrompt, Attributes, CauseOfDeath, Gender, LifeFocus, LifeLogEntry, MilestonePrompt,
+    MilestoneQuote, Person, PersonalityTrait, SimulationState, SocialActionType,
 };
 use crate::prng::DeterministicRng;
 use crate::social::{
@@ -37,6 +37,53 @@ pub struct MonteCarloDecadeReport {
     pub reached_2025_pct: f64,
 }
 
+/// 获取特定人生节点（5、15、30、50、70 岁）的自省提问
+pub fn get_milestone_prompt(age: u16, year: u16) -> Option<MilestonePrompt> {
+    match age {
+        5 => Some(MilestonePrompt {
+            age,
+            year,
+            title: "童蒙初启 · 五岁纪事".to_string(),
+            narrative: "你五岁了。开始记事的那年，弄堂里炊烟四起，外面的世界动荡不安，你在门槛上看蚂蚁搬家。".to_string(),
+            question: "“五岁的你，心里最想要一件什么东西？”".to_string(),
+            default_quote: "只想要一只带响的竹蜻蜓，还有娘蒸的热馒头。".to_string(),
+        }),
+        15 => Some(MilestonePrompt {
+            age,
+            year,
+            title: "及笄弱冠 · 十五立志".to_string(),
+            narrative: "十五岁，少年骨骼拔节，时代风潮激荡。你站在人生的门槛上，学业或生计催促你迅速长大。".to_string(),
+            question: "“十五岁这一年，你最想成为一个怎样的人？”".to_string(),
+            default_quote: "只想学得一技之长，让一家老小不再挨饿受冻。".to_string(),
+        }),
+        30 => Some(MilestonePrompt {
+            age,
+            year,
+            title: "三十而立 · 风雨成家".to_string(),
+            narrative: "三十岁，青年意气沉淀为柴米油盐与责任。时代的巨轮轰鸣向前，个人在其中颠簸漂泊。".to_string(),
+            question: "“三十岁这一年，你最庆幸自己没有放弃什么？”".to_string(),
+            default_quote: "纵使世道几番翻覆，我仍保住了一双手的手艺，守住了屋檐下的这点人间烟火。".to_string(),
+        }),
+        50 => Some(MilestonePrompt {
+            age,
+            year,
+            title: "五十知命 · 沧桑回首".to_string(),
+            narrative: "半百之年，鬓染霜白。走过半个世纪的波澜起伏，儿女渐渐成人，旧友日渐零落。".to_string(),
+            question: "“五十岁回望半生，哪一个决定让你至今无悔？”".to_string(),
+            default_quote: "不后悔在那年最艰难的时候，没有丢下亲人独自逃生。".to_string(),
+        }),
+        70 => Some(MilestonePrompt {
+            age,
+            year,
+            title: "古稀之年 · 浮生若梦".to_string(),
+            narrative: "七十岁，步履蹒跚，坐在夕阳斜照的院角。新世纪的楼宇林立，百年的往事如云烟掠过。".to_string(),
+            question: "“七十岁坐对残阳，你想对这个世道说些什么？”".to_string(),
+            default_quote: "看尽人间悲欢离合，这天下终于太平丰衣足食了，足矣。".to_string(),
+        }),
+        _ => None,
+    }
+}
+
 /// 核心模拟器状态机
 pub struct SimulationKernel {
     pub rng: DeterministicRng,
@@ -48,6 +95,8 @@ pub struct SimulationKernel {
     pub is_game_over: bool,
     pub can_switch_peer: bool,
     pub pending_choice: Option<ActiveEventPrompt>,
+    pub active_milestone: Option<MilestonePrompt>,
+    pub current_focus: Option<LifeFocus>,
 }
 
 impl SimulationKernel {
@@ -103,6 +152,8 @@ impl SimulationKernel {
             is_game_over: false,
             can_switch_peer: false,
             pending_choice: None,
+            active_milestone: None,
+            current_focus: None,
         }
     }
 
@@ -167,6 +218,8 @@ impl SimulationKernel {
             friends: Vec::new(),
             pending_delayed: Vec::new(),
             triggered_events: Vec::new(),
+            milestone_quotes: Vec::new(),
+            actions_remaining_this_year: 2,
             log: vec![LifeLogEntry {
                 year: birth_year,
                 age: 0,
@@ -237,89 +290,262 @@ impl SimulationKernel {
         Ok(self.get_state())
     }
 
-    /// 主动互动侍奉亲属（尽孝与维系亲情：消耗微量购买力，提升亲密度与心情）
-    pub fn interact_relative(&mut self, relative_id: u32) -> Result<SimulationState, String> {
+    /// 亲友多类型微互动操作（寄钱、写信、探望、断联、赡养）
+    pub fn interact_social_relative(
+        &mut self,
+        relative_id: u32,
+        action: SocialActionType,
+    ) -> Result<SimulationState, String> {
         let (active, _) = self.active_person_and_rng_mut();
+        if active.actions_remaining_this_year == 0 {
+            return Err("本年度亲友互动次数已用尽（每年最多2次）。".to_string());
+        }
+
         let member = active
             .family_tree
             .iter_mut()
             .find(|m| m.id == relative_id)
-            .ok_or_else(|| format!("Relative with id {} not found", relative_id))?;
+            .ok_or_else(|| format!("未找到编号为 {} 的亲属", relative_id))?;
 
         if !member.is_alive {
-            return Err("该亲属已故，无法互动".to_string());
+            return Err("该亲属已故，无法互动。".to_string());
         }
 
-        member.intimacy = (member.intimacy + 15).clamp(0, 100);
+        active.actions_remaining_this_year -= 1;
         let rel_title = member.relation.title();
-        let title = format!("问安侍奉【{}】", rel_title);
-        let content = format!("你专程探望{}，问安奉养，促膝长谈，虽耗费盘缠，心中倍感温情笃厚。", rel_title);
 
-        active.attributes.apply_delta(0, 0, 8, 2);
-        active.wealth_ppp = (active.wealth_ppp - 3).max(0);
-        active.log.push(LifeLogEntry {
-            year: active.current_year,
-            age: active.age,
-            title,
-            content,
-            category: "life".to_string(),
-        });
+        match action {
+            SocialActionType::Remit => {
+                let cost = if active.wealth_ppp >= 5 { 5 } else { active.wealth_ppp };
+                active.wealth_ppp -= cost;
+                member.intimacy = (member.intimacy + 15).min(100);
+                active.attributes.apply_delta(0, 0, 4, 1);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("寄资济家 · {}", rel_title),
+                    content: format!("你省吃俭用，给【{}】汇去家资银两（{} PPP），对方回信满纸感激，甚感慰藉。", rel_title, cost),
+                    category: "life".to_string(),
+                });
+            }
+            SocialActionType::Letter => {
+                member.intimacy = (member.intimacy + 8).min(100);
+                active.attributes.apply_delta(0, 0, 5, 2);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("寄书问安 · {}", rel_title),
+                    content: format!("你铺纸研墨，给【{}】寄去长信，细叙冷暖生活与平生感怀，见字如晤。", rel_title),
+                    category: "life".to_string(),
+                });
+            }
+            SocialActionType::Visit => {
+                let cost = if active.wealth_ppp >= 2 { 2 } else { active.wealth_ppp };
+                active.wealth_ppp -= cost;
+                member.intimacy = (member.intimacy + 18).min(100);
+                active.attributes.apply_delta(1, 0, 8, 2);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("登门探望 · {}", rel_title),
+                    content: format!("你专程抽空探望【{}】，促膝长谈，执手相顾，虽耗盘缠，心头温情笃厚。", rel_title),
+                    category: "life".to_string(),
+                });
+            }
+            SocialActionType::Sever => {
+                member.intimacy = 0;
+                active.attributes.apply_delta(0, 0, -3, 1);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("渐行渐远 · {}", rel_title),
+                    content: format!("因观念殊途或岁月隔阂，你决意与【{}】断绝走动，从此音信稀疏。", rel_title),
+                    category: "life".to_string(),
+                });
+            }
+            SocialActionType::Support => {
+                let cost = if active.wealth_ppp >= 10 { 10 } else { active.wealth_ppp };
+                active.wealth_ppp -= cost;
+                member.intimacy = (member.intimacy + 25).min(100);
+                active.attributes.apply_delta(0, 0, 10, 3);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("尽孝赡养 · {}", rel_title),
+                    content: format!("你尽心侍奉供养【{}】，延医抓药、晨昏问安，竭尽人伦大孝之义。", rel_title),
+                    category: "life".to_string(),
+                });
+            }
+        }
 
         Ok(self.get_state())
     }
 
-    /// 主动拜会好友朋辈（维系友情对抗自然淡化：消耗微量购买力，提升亲密度与心情见识）
-    pub fn interact_friend(&mut self, friend_id: u32) -> Result<SimulationState, String> {
+    /// 朋友多类型微互动操作（寄钱、写信、探望、断联、相助）
+    pub fn interact_social_friend(
+        &mut self,
+        friend_id: u32,
+        action: SocialActionType,
+    ) -> Result<SimulationState, String> {
         let (active, _) = self.active_person_and_rng_mut();
+        if active.actions_remaining_this_year == 0 {
+            return Err("本年度亲友互动次数已用尽（每年最多2次）。".to_string());
+        }
+
         let friend = active
             .friends
             .iter_mut()
             .find(|f| f.id == friend_id)
-            .ok_or_else(|| format!("Friend with id {} not found", friend_id))?;
+            .ok_or_else(|| format!("未找到编号为 {} 的好友", friend_id))?;
 
         if !friend.is_alive {
-            return Err("故人已逝，徒留追忆".to_string());
+            return Err("故人已逝，徒留追忆。".to_string());
         }
 
-        friend.intimacy = (friend.intimacy + 20).clamp(0, 100);
+        active.actions_remaining_this_year -= 1;
         let f_name = friend.name.clone();
-        let title = format!("拜会好友【{}】", f_name);
-        let content = format!("你与挚友{}茶楼小聚、互寄手书，畅叙离情别绪，旧日情谊历久弥新。", f_name);
 
-        active.attributes.apply_delta(0, 0, 10, 4);
-        active.wealth_ppp = (active.wealth_ppp - 2).max(0);
-        active.log.push(LifeLogEntry {
-            year: active.current_year,
-            age: active.age,
-            title,
-            content,
-            category: "life".to_string(),
-        });
+        match action {
+            SocialActionType::Remit => {
+                let cost = if active.wealth_ppp >= 4 { 4 } else { active.wealth_ppp };
+                active.wealth_ppp -= cost;
+                friend.intimacy = (friend.intimacy + 15).min(100);
+                active.attributes.apply_delta(0, 0, 5, 2);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("解囊济友 · {}", f_name),
+                    content: format!("得知好友【{}】手头拮据，你慷慨解囊资助，情义深重。", f_name),
+                    category: "life".to_string(),
+                });
+            }
+            SocialActionType::Letter => {
+                friend.intimacy = (friend.intimacy + 10).min(100);
+                active.attributes.apply_delta(0, 0, 6, 2);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("书信寄情 · {}", f_name),
+                    content: format!("你给好友【{}】写了一封长信，遥寄相思与平生近况，友情愈笃。", f_name),
+                    category: "life".to_string(),
+                });
+            }
+            SocialActionType::Visit => {
+                let cost = if active.wealth_ppp >= 2 { 2 } else { active.wealth_ppp };
+                active.wealth_ppp -= cost;
+                friend.intimacy = (friend.intimacy + 20).min(100);
+                active.attributes.apply_delta(0, 0, 8, 3);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("茶楼小聚 · {}", f_name),
+                    content: format!("你与好友【{}】相约茶肆酒馆，围炉对饮，畅叙天下事，畅快淋漓。", f_name),
+                    category: "life".to_string(),
+                });
+            }
+            SocialActionType::Sever => {
+                friend.intimacy = 0;
+                active.attributes.apply_delta(0, 0, -2, 1);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("割席断交 · {}", f_name),
+                    content: format!("因志趣相左或世故纷扰，你与【{}】割席分道，再不相闻。", f_name),
+                    category: "life".to_string(),
+                });
+            }
+            SocialActionType::Support => {
+                let cost = if active.wealth_ppp >= 6 { 6 } else { active.wealth_ppp };
+                active.wealth_ppp -= cost;
+                friend.intimacy = (friend.intimacy + 20).min(100);
+                active.attributes.apply_delta(0, 0, 7, 2);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: format!("鼎力相扶 · {}", f_name),
+                    content: format!("好友【{}】遇上难关，你挺身而出倾力照料相扶，患难见真情。", f_name),
+                    category: "life".to_string(),
+                });
+            }
+        }
 
         Ok(self.get_state())
     }
 
-    /// 推进一年（核心时钟滴答）
-    pub fn step_year(&mut self) -> SimulationState {
+    /// 主动互动侍奉亲属（兼容老接口，默认探望）
+    pub fn interact_relative(&mut self, relative_id: u32) -> Result<SimulationState, String> {
+        let (active, _) = self.active_person_and_rng_mut();
+        if active.actions_remaining_this_year == 0 {
+            active.actions_remaining_this_year = 1;
+        }
+        self.interact_social_relative(relative_id, SocialActionType::Visit)
+    }
+
+    /// 主动拜会好友朋辈（兼容老接口，默认聚访）
+    pub fn interact_friend(&mut self, friend_id: u32) -> Result<SimulationState, String> {
+        let (active, _) = self.active_person_and_rng_mut();
+        if active.actions_remaining_this_year == 0 {
+            active.actions_remaining_this_year = 1;
+        }
+        self.interact_social_friend(friend_id, SocialActionType::Visit)
+    }
+
+    /// 封存人生节点心声提问
+    pub fn submit_milestone_quote(&mut self, quote: &str) -> Result<SimulationState, String> {
+        let prompt = self
+            .active_milestone
+            .as_ref()
+            .ok_or_else(|| "当前没有待封存的人生节点提问。".to_string())?
+            .clone();
+
+        let final_quote = if quote.trim().is_empty() {
+            prompt.default_quote.clone()
+        } else {
+            quote.trim().to_string()
+        };
+
+        let active = if self.active_index == 0 {
+            &mut self.protagonist
+        } else {
+            &mut self.peers[self.active_index - 1]
+        };
+
+        active.milestone_quotes.push(MilestoneQuote {
+            age: prompt.age,
+            year: prompt.year,
+            question: prompt.question.clone(),
+            quote: final_quote.clone(),
+        });
+
+        active.log.push(LifeLogEntry {
+            year: prompt.year,
+            age: prompt.age,
+            title: format!("人生节点心声 · {}岁", prompt.age),
+            content: format!("你在此刻写下：“{}”", final_quote),
+            category: "life".to_string(),
+        });
+
+        self.active_milestone = None;
+        Ok(self.get_state())
+    }
+
+    /// 回合制主动推演一年（指定生命重心：读书/谋生/家人/身体/人情）
+    pub fn advance_year(&mut self, focus: LifeFocus) -> Result<SimulationState, String> {
         if self.is_game_over {
-            return self.get_state();
+            return Ok(self.get_state());
         }
 
-        // 若当前有等待选择的事件且调用者直接步进，自动依据性格倾向决断，防止无限空转
-        if let Some(ref prompt) = self.pending_choice {
-            let event_id = prompt.event_id.clone();
-            let data = get_era_data();
-            if let Some(raw_evt) = data.events.iter().find(|e| e.id == event_id) {
-                if let Some(ref choices) = raw_evt.choices {
-                    let personality = self.active_person().personality;
-                    let picked = pick_choice_by_personality(personality, choices);
-                    let choice_id = picked.id.clone();
-                    let (active, rng) = self.active_person_and_rng_mut();
-                    let _ = resolve_event_choice(active, raw_evt, &choice_id, rng);
-                }
-            }
-            self.pending_choice = None;
+        // 若当前有等待填写的反思节点，必须先封存心声
+        if self.active_milestone.is_some() {
+            return Err("当前处于人生关键节点，请先留下一句话封存心声。".to_string());
         }
+
+        // 若当前有待玩家决断的重大事件，必须先做出抉择
+        if self.pending_choice.is_some() {
+            return Err("当前有待玩家决断的重大事件，请先做出抉择。".to_string());
+        }
+
+        self.current_focus = Some(focus);
 
         let region = self.birth_location.region.clone();
 
@@ -351,10 +577,84 @@ impl SimulationKernel {
             &mut self.peers[self.active_index - 1]
         };
 
-        // 2.1 检查并生效延迟后果（3-10年显现的因果回响）
+        // 恢复当年亲友行动额度（每年最多2次）
+        active.actions_remaining_this_year = 2;
+
+        // 2.1 应用当年生命重心效果
+        match focus {
+            LifeFocus::Study => {
+                active.attributes.apply_delta(-1, 5, -1, 2);
+                let cost = if active.wealth_ppp > 5 { 5 } else { active.wealth_ppp };
+                active.wealth_ppp -= cost;
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: "【年度重心 · 读书求学】".to_string(),
+                    content: "你整年埋首于书本课业之中，诵读求知，学识与见识渐长，但伏案苦读亦耗费心力家资。".to_string(),
+                    category: "life".to_string(),
+                });
+            }
+            LifeFocus::Livelihood => {
+                active.attributes.apply_delta(-2, 0, -2, 1);
+                active.wealth_ppp += 10;
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: "【年度重心 · 帮贴谋生】".to_string(),
+                    content: "这一年你奔波营生，吃尽了人间烟火的苦头，好在积攒下微薄积蓄（购买力+10 PPP）。".to_string(),
+                    category: "life".to_string(),
+                });
+            }
+            LifeFocus::Family => {
+                active.attributes.apply_delta(1, 0, 6, 0);
+                let cost = if active.wealth_ppp > 2 { 2 } else { active.wealth_ppp };
+                active.wealth_ppp -= cost;
+                for m in active.family_tree.iter_mut() {
+                    if m.is_alive {
+                        m.intimacy = (m.intimacy + 6).min(100);
+                    }
+                }
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: "【年度重心 · 顾全家人】".to_string(),
+                    content: "你将大部分精力倾注在照料双亲与家中老小上，晨昏侍奉，虽未有外财，家庭和睦温情脉脉。".to_string(),
+                    category: "life".to_string(),
+                });
+            }
+            LifeFocus::Health => {
+                active.attributes.apply_delta(6, 0, 3, 0);
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: "【年度重心 · 调养身体】".to_string(),
+                    content: "你注重节制起居，调理体魄，避风寒、进粗羹，体魄渐趋强健，避过了这一年的几场时疫。".to_string(),
+                    category: "health".to_string(),
+                });
+            }
+            LifeFocus::Social => {
+                active.attributes.apply_delta(0, 0, 4, 3);
+                let cost = if active.wealth_ppp > 3 { 3 } else { active.wealth_ppp };
+                active.wealth_ppp -= cost;
+                for f in active.friends.iter_mut() {
+                    if f.is_alive {
+                        f.intimacy = (f.intimacy + 8).min(100);
+                    }
+                }
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: active.age,
+                    title: "【年度重心 · 维系人情】".to_string(),
+                    content: "你频繁与乡邻四邻、昔日同窗往来应酬，送往迎来，人情通达，在街坊间口皆有碑。".to_string(),
+                    category: "life".to_string(),
+                });
+            }
+        }
+
+        // 2.2 检查并生效延迟后果（3-10年显现的因果回响）
         tick_delayed_consequences(active, active.current_year);
 
-        // 2.2 判断是否平安抵达 2025 年
+        // 2.3 判断是否平安抵达 2025 年
         if active.current_year >= 2025 {
             active.is_alive = true;
             active.cause_of_death = Some(CauseOfDeath::SurviveTo2025);
@@ -367,10 +667,10 @@ impl SimulationKernel {
             });
             self.is_game_over = true;
             self.can_switch_peer = false;
-            return self.get_state();
+            return Ok(self.get_state());
         }
 
-        // 2.3 执行命运层生死大限判定
+        // 2.4 执行命运层生死大限判定
         let res = evaluate_destiny(active, &region, &mut self.rng);
 
         let mut died = false;
@@ -404,10 +704,10 @@ impl SimulationKernel {
             if age_at_death < 18 && has_living_peer {
                 self.can_switch_peer = true;
             }
-            return self.get_state();
+            return Ok(self.get_state());
         }
 
-        // 2.4 推进家族亲族与朋友圈社交时钟（亲人生老病死与朋友自然淡化）
+        // 2.5 推进家族亲族与朋友圈社交时钟（亲人生老病死与朋友自然淡化）
         {
             let (active, rng) = self.active_person_and_rng_mut();
             tick_family_tree(
@@ -462,7 +762,16 @@ impl SimulationKernel {
             }
         }
 
-        // 2.5 若存活，进入时代层 (Era) 判定
+        // 2.6 检查人生节点提问（5、15、30、50、70 岁）
+        if self.active_index == 0 {
+            let active = &self.protagonist;
+            if let Some(prompt) = get_milestone_prompt(active.age, active.current_year) {
+                self.active_milestone = Some(prompt);
+                return Ok(self.get_state());
+            }
+        }
+
+        // 2.7 时代层与人生层事件判定
         let (active, rng) = if self.active_index == 0 {
             (&mut self.protagonist, &mut self.rng)
         } else {
@@ -473,24 +782,59 @@ impl SimulationKernel {
         if let Some(era_evt) = find_applicable_era_event(active, loc) {
             if era_evt.choices.is_some() {
                 self.pending_choice = Some(build_active_event_prompt(era_evt));
-                return self.get_state();
+                return Ok(self.get_state());
             } else {
                 apply_narrative_event(active, era_evt);
             }
-        } else {
-            // 2.6 若本年未触发时代大事件，进入人生层 (Life) 判定
-            if let Some(life_evt) =
-                find_applicable_life_event(active, loc, rng)
-            {
-                if life_evt.choices.is_some() {
-                    self.pending_choice = Some(build_active_event_prompt(life_evt));
-                    return self.get_state();
-                } else {
-                    apply_narrative_event(active, life_evt);
-                }
+        } else if let Some(life_evt) = find_applicable_life_event(active, loc, rng) {
+            if life_evt.choices.is_some() {
+                self.pending_choice = Some(build_active_event_prompt(life_evt));
+                return Ok(self.get_state());
+            } else {
+                apply_narrative_event(active, life_evt);
             }
         }
 
+        Ok(self.get_state())
+    }
+
+    /// 推进一年（兼容接口：自动按性格决断或选择重心）
+    pub fn step_year(&mut self) -> SimulationState {
+        if self.is_game_over {
+            return self.get_state();
+        }
+
+        // 若当前有等待选择的事件且调用者直接步进，自动依据性格倾向决断
+        if let Some(ref prompt) = self.pending_choice {
+            let event_id = prompt.event_id.clone();
+            let data = get_era_data();
+            if let Some(raw_evt) = data.events.iter().find(|e| e.id == event_id) {
+                if let Some(ref choices) = raw_evt.choices {
+                    let personality = self.active_person().personality;
+                    let picked = pick_choice_by_personality(personality, choices);
+                    let choice_id = picked.id.clone();
+                    let (active, rng) = self.active_person_and_rng_mut();
+                    let _ = resolve_event_choice(active, raw_evt, &choice_id, rng);
+                }
+            }
+            self.pending_choice = None;
+        }
+
+        // 若处于人生节点自省中，自动以默认心声封存
+        if let Some(ref prompt) = self.active_milestone {
+            let def = prompt.default_quote.clone();
+            let _ = self.submit_milestone_quote(&def);
+        }
+
+        let focus = match self.active_person().personality {
+            PersonalityTrait::Scholar => LifeFocus::Study,
+            PersonalityTrait::Enterprising => LifeFocus::Livelihood,
+            PersonalityTrait::Harmonious => LifeFocus::Family,
+            PersonalityTrait::Pragmatic => LifeFocus::Health,
+            PersonalityTrait::Idealist => LifeFocus::Social,
+        };
+
+        let _ = self.advance_year(focus);
         self.get_state()
     }
 
@@ -503,7 +847,6 @@ impl SimulationKernel {
         // 1. 若当前已经有悬挂事件待选择
         if let Some(ref prompt) = self.pending_choice {
             if prompt.is_crossroads {
-                // 属于重大人生关口，坚决暂停等待玩家亲决
                 return self.get_state();
             } else {
                 let event_id = prompt.event_id.clone();
@@ -519,6 +862,12 @@ impl SimulationKernel {
                 }
                 self.pending_choice = None;
             }
+        }
+
+        // 若处于人生节点自省中，自动以默认心声封存以保证快进畅通
+        if let Some(ref prompt) = self.active_milestone {
+            let def = prompt.default_quote.clone();
+            let _ = self.submit_milestone_quote(&def);
         }
 
         // 2. 执行步进
@@ -584,6 +933,8 @@ impl SimulationKernel {
             is_game_over: self.is_game_over,
             can_switch_peer: self.can_switch_peer,
             pending_choice: self.pending_choice.clone(),
+            active_milestone: self.active_milestone.clone(),
+            current_focus: self.current_focus,
             birth_historical_name: hist_name.to_string(),
             birth_current_name: self.birth_location.current_name.clone(),
             current_currency: currency,

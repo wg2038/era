@@ -15,6 +15,20 @@ export class WasmSimulation {
         wasm.__wbg_wasmsimulation_free(ptr, 0);
     }
     /**
+     * 回合制推进一年（指定精力重心：读书/谋生/家人/身体/人情）
+     * @param {string} focus_str
+     * @returns {any}
+     */
+    advance_year(focus_str) {
+        const ptr0 = passStringToWasm0(focus_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmsimulation_advance_year(this.__wbg_ptr, ptr0, len0);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return takeFromExternrefTable0(ret[0]);
+    }
+    /**
      * 获取完整快照状态
      * @returns {any}
      */
@@ -38,12 +52,42 @@ export class WasmSimulation {
         return takeFromExternrefTable0(ret[0]);
     }
     /**
+     * 朋友多类型微互动（寄钱、写信、探望、断联、相助）
+     * @param {number} friend_id
+     * @param {string} action_str
+     * @returns {any}
+     */
+    interact_friend_action(friend_id, action_str) {
+        const ptr0 = passStringToWasm0(action_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmsimulation_interact_friend_action(this.__wbg_ptr, friend_id, ptr0, len0);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return takeFromExternrefTable0(ret[0]);
+    }
+    /**
      * 互动侍奉亲属
      * @param {number} relative_id
      * @returns {any}
      */
     interact_relative(relative_id) {
         const ret = wasm.wasmsimulation_interact_relative(this.__wbg_ptr, relative_id);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return takeFromExternrefTable0(ret[0]);
+    }
+    /**
+     * 亲属多类型微互动（寄钱、写信、探望、断联、赡养）
+     * @param {number} relative_id
+     * @param {string} action_str
+     * @returns {any}
+     */
+    interact_relative_action(relative_id, action_str) {
+        const ptr0 = passStringToWasm0(action_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmsimulation_interact_relative_action(this.__wbg_ptr, relative_id, ptr0, len0);
         if (ret[2]) {
             throw takeFromExternrefTable0(ret[1]);
         }
@@ -102,6 +146,20 @@ export class WasmSimulation {
      */
     step_year_auto() {
         const ret = wasm.wasmsimulation_step_year_auto(this.__wbg_ptr);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return takeFromExternrefTable0(ret[0]);
+    }
+    /**
+     * 封存人生节点心声
+     * @param {string} quote
+     * @returns {any}
+     */
+    submit_milestone_quote(quote) {
+        const ptr0 = passStringToWasm0(quote, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmsimulation_submit_milestone_quote(this.__wbg_ptr, ptr0, len0);
         if (ret[2]) {
             throw takeFromExternrefTable0(ret[1]);
         }

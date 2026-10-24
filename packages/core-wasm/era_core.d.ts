@@ -22,8 +22,15 @@ export interface Person {
     friends: Friend[];
     pending_delayed: PendingDelayedConsequence[];
     triggered_events: string[];
+    milestone_quotes: MilestoneQuote[];
+    actions_remaining_this_year: number;
     log: LifeLogEntry[];
 }
+
+/**
+ * 亲友微互动类型
+ */
+export type SocialActionType = "Remit" | "Letter" | "Visit" | "Sever" | "Support";
 
 /**
  * 亲属亲缘关系类别
@@ -39,6 +46,16 @@ export interface LifeLogEntry {
     title: string;
     content: string;
     category: string;
+}
+
+/**
+ * 人生节点反思存留记录（5、15、30、50、70 岁）
+ */
+export interface MilestoneQuote {
+    age: number;
+    year: number;
+    question: string;
+    quote: string;
 }
 
 /**
@@ -76,6 +93,8 @@ export interface SimulationState {
     is_game_over: boolean;
     can_switch_peer: boolean;
     pending_choice: ActiveEventPrompt | undefined;
+    active_milestone: MilestonePrompt | undefined;
+    current_focus: LifeFocus | undefined;
     birth_historical_name: string;
     birth_current_name: string;
     current_currency: CurrencyDisplay;
@@ -94,6 +113,23 @@ export interface KinshipMember {
     death_year: number | undefined;
     intimacy: number;
     occupation: string;
+}
+
+/**
+ * 年度生命精力重心（回合制每年必选其一）
+ */
+export type LifeFocus = "Study" | "Livelihood" | "Family" | "Health" | "Social";
+
+/**
+ * 当前待玩家作答的人生节点自省提示
+ */
+export interface MilestonePrompt {
+    age: number;
+    year: number;
+    title: string;
+    narrative: string;
+    question: string;
+    default_quote: string;
 }
 
 /**
@@ -205,6 +241,10 @@ export class WasmSimulation {
     free(): void;
     [Symbol.dispose](): void;
     /**
+     * 回合制推进一年（指定精力重心：读书/谋生/家人/身体/人情）
+     */
+    advance_year(focus_str: string): any;
+    /**
      * 获取完整快照状态
      */
     get_state(): any;
@@ -213,9 +253,17 @@ export class WasmSimulation {
      */
     interact_friend(friend_id: number): any;
     /**
+     * 朋友多类型微互动（寄钱、写信、探望、断联、相助）
+     */
+    interact_friend_action(friend_id: number, action_str: string): any;
+    /**
      * 互动侍奉亲属
      */
     interact_relative(relative_id: number): any;
+    /**
+     * 亲属多类型微互动（寄钱、写信、探望、断联、赡养）
+     */
+    interact_relative_action(relative_id: number, action_str: string): any;
     /**
      * 做出抉择
      */
@@ -236,6 +284,10 @@ export class WasmSimulation {
      * 快进模式自适应步进（次要抉择自动判定，仅在重大关口暂停）
      */
     step_year_auto(): any;
+    /**
+     * 封存人生节点心声
+     */
+    submit_milestone_quote(quote: string): any;
     /**
      * 早夭时切换至同年同县出生的另外四人之一
      */
@@ -265,14 +317,18 @@ export interface InitOutput {
     readonly kernel_version: () => [number, number];
     readonly run_monte_carlo: (a: number, b: number) => [number, number, number];
     readonly run_monte_carlo_all_decades: (a: number) => [number, number, number];
+    readonly wasmsimulation_advance_year: (a: number, b: number, c: number) => [number, number, number];
     readonly wasmsimulation_get_state: (a: number) => [number, number, number];
     readonly wasmsimulation_interact_friend: (a: number, b: number) => [number, number, number];
+    readonly wasmsimulation_interact_friend_action: (a: number, b: number, c: number, d: number) => [number, number, number];
     readonly wasmsimulation_interact_relative: (a: number, b: number) => [number, number, number];
+    readonly wasmsimulation_interact_relative_action: (a: number, b: number, c: number, d: number) => [number, number, number];
     readonly wasmsimulation_make_choice: (a: number, b: number, c: number) => [number, number, number];
     readonly wasmsimulation_new: (a: bigint, b: number) => number;
     readonly wasmsimulation_run_to_end: (a: number) => [number, number, number];
     readonly wasmsimulation_step_year: (a: number) => [number, number, number];
     readonly wasmsimulation_step_year_auto: (a: number) => [number, number, number];
+    readonly wasmsimulation_submit_milestone_quote: (a: number, b: number, c: number) => [number, number, number];
     readonly wasmsimulation_switch_to_peer: (a: number, b: number) => number;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;

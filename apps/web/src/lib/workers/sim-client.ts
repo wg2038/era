@@ -36,6 +36,18 @@ export class SimulationWorkerClient {
     throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
   }
 
+  async advanceYear(focus: string): Promise<SimulationState> {
+    const res = await this.send({ type: 'ADVANCE_YEAR', focus });
+    if (res.type === 'STATE') return res.state;
+    throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
+  }
+
+  async submitMilestone(quote: string): Promise<SimulationState> {
+    const res = await this.send({ type: 'SUBMIT_MILESTONE', quote });
+    if (res.type === 'STATE') return res.state;
+    throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
+  }
+
   async step(): Promise<SimulationState> {
     const res = await this.send({ type: 'STEP' });
     if (res.type === 'STATE') return res.state;
@@ -62,6 +74,18 @@ export class SimulationWorkerClient {
 
   async interactFriend(friendId: number): Promise<SimulationState> {
     const res = await this.send({ type: 'INTERACT_FRIEND', friendId });
+    if (res.type === 'STATE') return res.state;
+    throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
+  }
+
+  async interactRelativeAction(relativeId: number, action: string): Promise<SimulationState> {
+    const res = await this.send({ type: 'INTERACT_RELATIVE_ACTION', relativeId, action });
+    if (res.type === 'STATE') return res.state;
+    throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
+  }
+
+  async interactFriendAction(friendId: number, action: string): Promise<SimulationState> {
+    const res = await this.send({ type: 'INTERACT_FRIEND_ACTION', friendId, action });
     if (res.type === 'STATE') return res.state;
     throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
   }
