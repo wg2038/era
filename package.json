@@ -14,7 +14,7 @@
     "test:e2e": "playwright test",
     "test:core": "cargo test --manifest-path crates/era-core/Cargo.toml --test determinism --lib",
     "test:monte-carlo": "cargo test --manifest-path crates/era-core/Cargo.toml --test monte_carlo --release -- --nocapture",
-    "check": "pnpm --filter @era/data check && pnpm --filter @era/web check",
+    "check": "pnpm run build:data && pnpm --filter @era/data check && pnpm --filter @era/web check",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write ."
