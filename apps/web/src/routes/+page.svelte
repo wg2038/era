@@ -8,6 +8,8 @@
     getPacingDescription,
     type PlaySpeedMode,
   } from '../lib/pacing';
+  import InkAtmosphereCanvas from '../lib/components/InkAtmosphereCanvas.svelte';
+  import EndingSummary from '../lib/components/EndingSummary.svelte';
 
   let client: SimulationWorkerClient | null = null;
   let isReady: boolean = $state(false);
@@ -165,11 +167,13 @@
   }
 </script>
 
+<InkAtmosphereCanvas year={simState?.current_year ?? 1930} />
+
 <div class="stage-container">
   <header class="header">
-    <div class="badge">技术展示型内核 · 15+ 适龄提示</div>
+    <div class="badge">技术展示型内核 · 15+ 适龄提示 · 纯客户端离线运行</div>
     <h1 class="title">《Era》（时代）</h1>
-    <p class="subtitle">中国百年人生文字模拟 · 确定性 WebAssembly 内核 (M1 阶段)</p>
+    <p class="subtitle">中国百年人生文字模拟 · WebAssembly 确定性内核 · WebGPU 宣纸水墨 · 终局档案 (M4)</p>
   </header>
 
   <!-- 控制与设置卡片 -->
@@ -235,7 +239,9 @@
     </div>
   </section>
 
-  {#if simState && activePerson}
+  {#if simState && simState.is_game_over && !simState.can_switch_peer}
+    <EndingSummary simState={simState} onRestart={startNewGame} />
+  {:else if simState && activePerson}
     <!-- 人生主舞台仪表盘 -->
     <section class="card mt-6 stage-main">
       <div class="character-header">

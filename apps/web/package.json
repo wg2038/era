@@ -10,8 +10,8 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@era/era-core": "workspace:*",
     "@era/data": "workspace:*",
+    "@era/era-core": "workspace:*",
     "@resvg/resvg-wasm": "^2.6.2",
     "idb-keyval": "^6.3.0",
     "lucide-svelte": "^1.0.1",
@@ -22,6 +22,7 @@
     "@sveltejs/kit": "^3.1.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/node": "^26.6.5",
+    "@webgpu/types": "^0.1.74",
     "svelte": "^5.57.2",
     "svelte-check": "^4.7.7",
     "typescript": "^5.9.3",
