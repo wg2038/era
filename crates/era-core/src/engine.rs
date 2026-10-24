@@ -16,6 +16,9 @@ use crate::models::{
     SimulationState,
 };
 use crate::prng::DeterministicRng;
+use crate::social::{
+    generate_initial_family_tree, tick_family_tree, tick_friends, Friend,
+};
 
 /// 蒙特卡洛单个年代统计报告
 #[derive(Clone, Debug, Serialize, Deserialize, Tsify)]
@@ -125,6 +128,8 @@ impl SimulationKernel {
             _ => PersonalityTrait::Idealist,
         };
 
+        let family_tree = generate_initial_family_tree(birth_year, rng);
+
         let attributes = Attributes {
             health: init_health,
             knowledge: init_knowledge,
@@ -158,6 +163,8 @@ impl SimulationKernel {
             attributes,
             wealth_ppp: init_wealth,
             personality,
+            family_tree,
+            friends: Vec::new(),
             pending_delayed: Vec::new(),
             triggered_events: Vec::new(),
             log: vec![LifeLogEntry {
@@ -227,6 +234,68 @@ impl SimulationKernel {
 
         // 抉择完毕，清除悬挂状态
         self.pending_choice = None;
+        Ok(self.get_state())
+    }
+
+    /// 主动互动侍奉亲属（尽孝与维系亲情：消耗微量购买力，提升亲密度与心情）
+    pub fn interact_relative(&mut self, relative_id: u32) -> Result<SimulationState, String> {
+        let (active, _) = self.active_person_and_rng_mut();
+        let member = active
+            .family_tree
+            .iter_mut()
+            .find(|m| m.id == relative_id)
+            .ok_or_else(|| format!("Relative with id {} not found", relative_id))?;
+
+        if !member.is_alive {
+            return Err("该亲属已故，无法互动".to_string());
+        }
+
+        member.intimacy = (member.intimacy + 15).clamp(0, 100);
+        let rel_title = member.relation.title();
+        let title = format!("问安侍奉【{}】", rel_title);
+        let content = format!("你专程探望{}，问安奉养，促膝长谈，虽耗费盘缠，心中倍感温情笃厚。", rel_title);
+
+        active.attributes.apply_delta(0, 0, 8, 2);
+        active.wealth_ppp = (active.wealth_ppp - 3).max(0);
+        active.log.push(LifeLogEntry {
+            year: active.current_year,
+            age: active.age,
+            title,
+            content,
+            category: "life".to_string(),
+        });
+
+        Ok(self.get_state())
+    }
+
+    /// 主动拜会好友朋辈（维系友情对抗自然淡化：消耗微量购买力，提升亲密度与心情见识）
+    pub fn interact_friend(&mut self, friend_id: u32) -> Result<SimulationState, String> {
+        let (active, _) = self.active_person_and_rng_mut();
+        let friend = active
+            .friends
+            .iter_mut()
+            .find(|f| f.id == friend_id)
+            .ok_or_else(|| format!("Friend with id {} not found", friend_id))?;
+
+        if !friend.is_alive {
+            return Err("故人已逝，徒留追忆".to_string());
+        }
+
+        friend.intimacy = (friend.intimacy + 20).clamp(0, 100);
+        let f_name = friend.name.clone();
+        let title = format!("拜会好友【{}】", f_name);
+        let content = format!("你与挚友{}茶楼小聚、互寄手书，畅叙离情别绪，旧日情谊历久弥新。", f_name);
+
+        active.attributes.apply_delta(0, 0, 10, 4);
+        active.wealth_ppp = (active.wealth_ppp - 2).max(0);
+        active.log.push(LifeLogEntry {
+            year: active.current_year,
+            age: active.age,
+            title,
+            content,
+            category: "life".to_string(),
+        });
+
         Ok(self.get_state())
     }
 
@@ -338,8 +407,70 @@ impl SimulationKernel {
             return self.get_state();
         }
 
-        // 2.4 若存活，进入时代层 (Era) 判定
-        if let Some(era_evt) = find_applicable_era_event(active, &self.birth_location) {
+        // 2.4 推进家族亲族与朋友圈社交时钟（亲人生老病死与朋友自然淡化）
+        {
+            let (active, rng) = self.active_person_and_rng_mut();
+            tick_family_tree(
+                &mut active.family_tree,
+                active.current_year,
+                &region,
+                rng,
+                &mut active.log,
+                active.age,
+            );
+            tick_friends(&mut active.friends, active.current_year, &region, rng);
+
+            // 结识新朋友（7岁儿时发小、16岁同窗挚友）
+            if active.age == 7 && active.friends.is_empty() {
+                let names = ["赵小栓", "陈二宝", "孙巧云", "周阿福", "林春燕"];
+                let friend_name = names[rng.gen_range_u32(0, names.len() as u32) as usize];
+                active.friends.push(Friend {
+                    id: 201,
+                    name: friend_name.to_string(),
+                    acquaintance_year: active.current_year,
+                    age: 7,
+                    is_alive: true,
+                    intimacy: 85,
+                    tag: "儿时发小".to_string(),
+                });
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: 7,
+                    title: "结识发小".to_string(),
+                    content: format!("在弄堂打谷场与古榕树下，你结识了邻家玩伴【{}】，结伴摸鱼捕雀，两小无猜。", friend_name),
+                    category: "life".to_string(),
+                });
+            } else if active.age == 16 && active.friends.len() == 1 {
+                let names = ["张志强", "王建华", "刘雪梅", "徐文斌", "杨晓红"];
+                let friend_name = names[rng.gen_range_u32(0, names.len() as u32) as usize];
+                active.friends.push(Friend {
+                    id: 202,
+                    name: friend_name.to_string(),
+                    acquaintance_year: active.current_year,
+                    age: 16,
+                    is_alive: true,
+                    intimacy: 80,
+                    tag: "同窗知己".to_string(),
+                });
+                active.log.push(LifeLogEntry {
+                    year: active.current_year,
+                    age: 16,
+                    title: "求知同窗".to_string(),
+                    content: format!("青年立身求学之际，你与同窗【{}】志趣相投，常在油灯与晨曦下切磋学问、指点江山。", friend_name),
+                    category: "life".to_string(),
+                });
+            }
+        }
+
+        // 2.5 若存活，进入时代层 (Era) 判定
+        let (active, rng) = if self.active_index == 0 {
+            (&mut self.protagonist, &mut self.rng)
+        } else {
+            (&mut self.peers[self.active_index - 1], &mut self.rng)
+        };
+        let loc = &self.birth_location;
+
+        if let Some(era_evt) = find_applicable_era_event(active, loc) {
             if era_evt.choices.is_some() {
                 self.pending_choice = Some(build_active_event_prompt(era_evt));
                 return self.get_state();
@@ -347,9 +478,9 @@ impl SimulationKernel {
                 apply_narrative_event(active, era_evt);
             }
         } else {
-            // 2.5 若本年未触发时代大事件，进入人生层 (Life) 判定
+            // 2.6 若本年未触发时代大事件，进入人生层 (Life) 判定
             if let Some(life_evt) =
-                find_applicable_life_event(active, &self.birth_location, &mut self.rng)
+                find_applicable_life_event(active, loc, rng)
             {
                 if life_evt.choices.is_some() {
                     self.pending_choice = Some(build_active_event_prompt(life_evt));

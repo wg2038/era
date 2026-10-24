@@ -6,6 +6,7 @@ pub mod engine;
 pub mod event_engine;
 pub mod models;
 pub mod prng;
+pub mod social;
 
 use wasm_bindgen::prelude::*;
 
@@ -56,6 +57,28 @@ impl WasmSimulation {
     pub fn make_choice(&mut self, choice_id: &str) -> Result<JsValue, JsValue> {
         self.inner
             .make_choice(choice_id)
+            .map_err(|e| JsValue::from_str(&e))
+            .and_then(|state| {
+                serde_wasm_bindgen::to_value(&state)
+                    .map_err(|e| JsValue::from_str(&format!("Serialization error: {e}")))
+            })
+    }
+
+    /// 互动侍奉亲属
+    pub fn interact_relative(&mut self, relative_id: u32) -> Result<JsValue, JsValue> {
+        self.inner
+            .interact_relative(relative_id)
+            .map_err(|e| JsValue::from_str(&e))
+            .and_then(|state| {
+                serde_wasm_bindgen::to_value(&state)
+                    .map_err(|e| JsValue::from_str(&format!("Serialization error: {e}")))
+            })
+    }
+
+    /// 拜会好友
+    pub fn interact_friend(&mut self, friend_id: u32) -> Result<JsValue, JsValue> {
+        self.inner
+            .interact_friend(friend_id)
             .map_err(|e| JsValue::from_str(&e))
             .and_then(|state| {
                 serde_wasm_bindgen::to_value(&state)

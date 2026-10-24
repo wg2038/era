@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 
 use crate::currency::CurrencyDisplay;
+use crate::social::{Friend, KinshipMember};
 
 /// 角色基础属性包（四维属性，取值范围 0..=100）
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Tsify)]
@@ -172,6 +173,8 @@ pub struct Person {
     pub attributes: Attributes,
     pub wealth_ppp: i32,                         // 内部购买力点数（PPP）
     pub personality: PersonalityTrait,           // 性格倾向
+    pub family_tree: Vec<KinshipMember>,         // 家族谱系（存亡与亲密度）
+    pub friends: Vec<Friend>,                    // 朋友圈（不维系会自然淡化）
     pub pending_delayed: Vec<PendingDelayedConsequence>, // 待生效延迟后果
     pub triggered_events: Vec<String>,           // 已经历的历史/人生事件ID
     pub log: Vec<LifeLogEntry>,

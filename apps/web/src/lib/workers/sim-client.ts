@@ -54,6 +54,18 @@ export class SimulationWorkerClient {
     throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
   }
 
+  async interactRelative(relativeId: number): Promise<SimulationState> {
+    const res = await this.send({ type: 'INTERACT_RELATIVE', relativeId });
+    if (res.type === 'STATE') return res.state;
+    throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
+  }
+
+  async interactFriend(friendId: number): Promise<SimulationState> {
+    const res = await this.send({ type: 'INTERACT_FRIEND', friendId });
+    if (res.type === 'STATE') return res.state;
+    throw new Error(res.type === 'ERROR' ? res.message : 'Unexpected response');
+  }
+
   async runToEnd(): Promise<SimulationState> {
     const res = await this.send({ type: 'RUN_TO_END' });
     if (res.type === 'STATE') return res.state;

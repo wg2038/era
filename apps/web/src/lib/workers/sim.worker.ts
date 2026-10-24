@@ -21,6 +21,8 @@ export type WorkerMessage =
   | { type: 'STEP' }
   | { type: 'STEP_AUTO' }
   | { type: 'MAKE_CHOICE'; choiceId: string }
+  | { type: 'INTERACT_RELATIVE'; relativeId: number }
+  | { type: 'INTERACT_FRIEND'; friendId: number }
   | { type: 'RUN_TO_END' }
   | { type: 'SWITCH_PEER'; peerIndex: number }
   | { type: 'RUN_MONTE_CARLO'; decade: number; count: number }
@@ -63,6 +65,20 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
       case 'MAKE_CHOICE': {
         if (!simulation) throw new Error('Simulation not initialized');
         const state = simulation.make_choice(msg.choiceId) as SimulationState;
+        self.postMessage({ type: 'STATE', state });
+        break;
+      }
+
+      case 'INTERACT_RELATIVE': {
+        if (!simulation) throw new Error('Simulation not initialized');
+        const state = simulation.interact_relative(msg.relativeId) as SimulationState;
+        self.postMessage({ type: 'STATE', state });
+        break;
+      }
+
+      case 'INTERACT_FRIEND': {
+        if (!simulation) throw new Error('Simulation not initialized');
+        const state = simulation.interact_friend(msg.friendId) as SimulationState;
         self.postMessage({ type: 'STATE', state });
         break;
       }

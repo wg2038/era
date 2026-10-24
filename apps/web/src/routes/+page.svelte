@@ -3,6 +3,11 @@
   import type { MonteCarloDecadeReport, SimulationState } from '@era/era-core';
   import { compiledData } from '@era/data/dist/index.js';
   import { SimulationWorkerClient } from '../lib/workers/sim-client';
+  import {
+    calculateAdaptiveIntervalMs,
+    getPacingDescription,
+    type PlaySpeedMode,
+  } from '../lib/pacing';
 
   let client: SimulationWorkerClient | null = null;
   let isReady: boolean = $state(false);
@@ -11,6 +16,17 @@
   let customBirthYear: number | undefined = $state(undefined);
   let mcReports: MonteCarloDecadeReport[] = $state([]);
   let isRunningMc: boolean = $state(false);
+
+  // 自适应节奏状态 (M3 阶段)
+  let isPlaying: boolean = $state(false);
+  let pacingMode: PlaySpeedMode = $state('normal');
+  let speedMultiplier: number = $state(1);
+  let timerId: ReturnType<typeof setInterval> | null = null;
+
+  let pacingInfo = $derived.by(() => {
+    const by = simState?.protagonist.birth_year ?? 1930;
+    return getPacingDescription(by, pacingMode, speedMultiplier);
+  });
 
   // 计算当前地点历史名称（如：1935年出生在北平）
   let birthLocationName = $derived.by(() => {
@@ -47,7 +63,63 @@
 
   onDestroy(() => {
     client?.terminate();
+    if (timerId) clearInterval(timerId);
   });
+
+  function stopPacingTimer() {
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+    isPlaying = false;
+  }
+
+  function startPacingTimer() {
+    stopPacingTimer();
+    isPlaying = true;
+    const by = simState?.protagonist.birth_year ?? 1930;
+    const intervalMs = calculateAdaptiveIntervalMs(by, pacingMode, speedMultiplier);
+
+    timerId = setInterval(async () => {
+      if (!client || !simState || simState.is_game_over) {
+        stopPacingTimer();
+        return;
+      }
+      // 若当前有必须玩家抉择的事件悬挂，自动暂停播放
+      if (simState.pending_choice) {
+        stopPacingTimer();
+        return;
+      }
+
+      if (pacingMode === 'fast') {
+        simState = await client.stepAuto();
+      } else {
+        simState = await client.step();
+      }
+
+      if (simState.is_game_over || simState.pending_choice) {
+        stopPacingTimer();
+      }
+    }, intervalMs);
+  }
+
+  function togglePlay() {
+    if (isPlaying) {
+      stopPacingTimer();
+    } else {
+      startPacingTimer();
+    }
+  }
+
+  async function interactRelative(id: number) {
+    if (!client) return;
+    simState = await client.interactRelative(id);
+  }
+
+  async function interactFriend(id: number) {
+    if (!client) return;
+    simState = await client.interactFriend(id);
+  }
 
   async function startNewGame() {
     if (!client) return;
@@ -122,18 +194,44 @@
     </div>
 
     <div class="action-row">
-      <button class="btn btn-secondary" onclick={stepYear} disabled={!isReady || simState?.is_game_over}>
+      <button class="btn" class:btn-primary={!isPlaying} class:btn-accent={isPlaying} onclick={togglePlay} disabled={!isReady || simState?.is_game_over}>
+        {isPlaying ? '⏸ 暂停自动推进' : '▶ 自适应自动推演'}
+      </button>
+      <button class="btn btn-secondary" onclick={stepYear} disabled={!isReady || simState?.is_game_over || isPlaying}>
         推进一年 (Step Year)
       </button>
-      <button class="btn btn-primary" onclick={stepAuto} disabled={!isReady || simState?.is_game_over}>
-        自适应快进 (Auto Step)
+      <button class="btn btn-secondary" onclick={stepAuto} disabled={!isReady || simState?.is_game_over || isPlaying}>
+        快进一年 (Auto Step)
       </button>
       <button class="btn btn-accent" onclick={runToEnd} disabled={!isReady || simState?.is_game_over}>
         推演至终局 (Run To End)
       </button>
       <button class="btn btn-outline" onclick={triggerMonteCarlo} disabled={isRunningMc}>
-        {isRunningMc ? '蒙特卡洛计算中...' : '运行全年代蒙特卡洛对齐压测'}
+        {isRunningMc ? '蒙特卡洛计算中...' : '运行全年代历史对齐压测'}
       </button>
+    </div>
+
+    <!-- 自适应时间节奏状态条 (M3 核心) -->
+    <div class="pacing-bar">
+      <div class="pacing-desc">
+        ⏱ <strong>自适应时间预算</strong>：{pacingInfo.label}
+      </div>
+      <div class="pacing-options">
+        <label class="radio-label">
+          <input type="radio" name="pacingMode" value="normal" bind:group={pacingMode} onchange={() => { if (isPlaying) startPacingTimer(); }} />
+          沉浸游玩 (30分钟预算)
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="pacingMode" value="fast" bind:group={pacingMode} onchange={() => { if (isPlaying) startPacingTimer(); }} />
+          极速快进 (5分钟预算)
+        </label>
+        <select class="speed-select" bind:value={speedMultiplier} onchange={() => { if (isPlaying) startPacingTimer(); }}>
+          <option value={1}>1.0x 基准速率</option>
+          <option value={2}>2.0x 速率</option>
+          <option value={5}>5.0x 速率</option>
+          <option value={10}>10.0x 超高速</option>
+        </select>
+      </div>
     </div>
   </section>
 
@@ -231,6 +329,80 @@
           </div>
         </div>
       {/if}
+
+      <!-- 家族谱系树 (M3 核心) -->
+      <div class="social-section mt-4">
+        <div class="social-header">
+          <h3 class="section-title">家族亲族谱系（存亡与亲情羁绊）</h3>
+          <span class="social-hint">尊亲生老病死随时代演进 · 侍奉可增进亲密与心情</span>
+        </div>
+        <div class="kinship-grid">
+          {#each activePerson.family_tree as member}
+            <div class="kinship-card" class:member-dead={!member.is_alive}>
+              <div class="kinship-top">
+                <span class="kinship-relation">{member.name}</span>
+                <span class="kinship-status" class:alive={member.is_alive}>
+                  {member.is_alive ? `${member.age} 岁 · 健在` : `已故（享年 ${member.age} 岁）`}
+                </span>
+              </div>
+              <div class="kinship-occ">{member.occupation}</div>
+              <div class="intimacy-bar-wrapper">
+                <div class="intimacy-label">
+                  <span>亲密度</span>
+                  <span>{member.intimacy}/100</span>
+                </div>
+                <div class="intimacy-track">
+                  <div class="intimacy-fill" style="width: {member.intimacy}%"></div>
+                </div>
+              </div>
+              {#if member.is_alive}
+                <button class="btn btn-tiny mt-2" onclick={() => interactRelative(member.id)}>
+                  问安奉养 (-3购买力)
+                </button>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <!-- 朋友圈与朋辈社交 (M3 核心) -->
+      <div class="social-section mt-4">
+        <div class="social-header">
+          <h3 class="section-title">朋辈知交圈（不维系随岁月自然淡化）</h3>
+          <span class="social-hint">⚠️ 若无聚谈往来，每年亲密自然衰减 2 点</span>
+        </div>
+        {#if activePerson.friends.length === 0}
+          <div class="social-empty">幼年尚无相识知己，待 7 岁发小、16 岁同窗之时结交……</div>
+        {:else}
+          <div class="kinship-grid">
+            {#each activePerson.friends as friend}
+              <div class="kinship-card" class:member-dead={!friend.is_alive}>
+                <div class="kinship-top">
+                  <span class="kinship-relation">{friend.name}</span>
+                  <span class="friend-tag">{friend.tag}</span>
+                </div>
+                <div class="kinship-occ">
+                  {friend.is_alive ? `${friend.age} 岁 · 结识于 ${friend.acquaintance_year} 年` : '故人已逝'}
+                </div>
+                <div class="intimacy-bar-wrapper">
+                  <div class="intimacy-label">
+                    <span>交谊羁绊</span>
+                    <span class:text-warning={friend.intimacy < 30}>{friend.intimacy}/100</span>
+                  </div>
+                  <div class="intimacy-track">
+                    <div class="intimacy-fill friend-fill" style="width: {friend.intimacy}%"></div>
+                  </div>
+                </div>
+                {#if friend.is_alive}
+                  <button class="btn btn-tiny mt-2" onclick={() => interactFriend(friend.id)}>
+                    拜会小聚 (-2购买力)
+                  </button>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
 
       <!-- 同年同县四人命运对照 -->
       <div class="peers-section">
@@ -744,5 +916,159 @@
   .effect-tag.risk-tag {
     background: #422006;
     color: #fb923c;
+  }
+  /* 自适应节奏控制条 */
+  .pacing-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    background: #1c1916;
+    border: 1px solid #3d352b;
+    border-radius: 6px;
+    padding: 0.6rem 0.85rem;
+    margin-top: 0.85rem;
+    gap: 0.75rem;
+  }
+  .pacing-desc {
+    font-size: 0.85rem;
+    color: #e6dfd3;
+  }
+  .pacing-options {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .radio-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: #b0a99c;
+    cursor: pointer;
+  }
+  .speed-select {
+    background: #28241f;
+    color: #c79a5b;
+    border: 1px solid #4a3e30;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  /* 社交与亲属卡片体系 (M3) */
+  .social-section {
+    background: #161412;
+    border: 1px solid #2e2a25;
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+  .social-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .social-hint {
+    font-size: 0.75rem;
+    color: #9c9488;
+  }
+  .social-empty {
+    color: #78716c;
+    font-size: 0.85rem;
+    font-style: italic;
+    padding: 1rem 0;
+  }
+  .kinship-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 0.85rem;
+  }
+  .kinship-card {
+    background: #211d19;
+    border: 1px solid #383127;
+    border-radius: 6px;
+    padding: 0.85rem;
+    transition: all 0.2s ease;
+  }
+  .kinship-card.member-dead {
+    opacity: 0.45;
+    border-color: #26221d;
+    background: #181614;
+  }
+  .kinship-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+  }
+  .kinship-relation {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #f3efe6;
+  }
+  .kinship-status {
+    font-size: 0.72rem;
+    color: #8c8477;
+  }
+  .kinship-status.alive {
+    color: #4ade80;
+  }
+  .friend-tag {
+    font-size: 0.72rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    background: #1e293b;
+    color: #38bdf8;
+  }
+  .kinship-occ {
+    font-size: 0.78rem;
+    color: #a8a29e;
+    margin-bottom: 0.5rem;
+  }
+  .intimacy-bar-wrapper {
+    margin-top: 0.35rem;
+  }
+  .intimacy-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: #78716c;
+    margin-bottom: 0.2rem;
+  }
+  .intimacy-track {
+    width: 100%;
+    height: 5px;
+    background: #2e2820;
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+  .intimacy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #d97706, #f59e0b);
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+  }
+  .intimacy-fill.friend-fill {
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+  }
+  .btn-tiny {
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    background: #2b251e;
+    color: #fbbf24;
+    border: 1px solid #4a3e2f;
+    border-radius: 4px;
+  }
+  .btn-tiny:hover {
+    background: #383025;
+    border-color: #f59e0b;
+  }
+  .text-warning {
+    color: #f97316;
   }
 </style>
