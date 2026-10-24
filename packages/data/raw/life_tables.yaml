@@ -1,0 +1,79 @@
+- decade: 1900
+  infantMortalityRate: 0.240
+  childMortalityRate: 0.150
+  baseCrudeDeathRate: 33.0
+  lifeExpectancy: 31.5
+  source: "Barclay et al. (1976); 侯杨方《中国人口史·第六卷》"
+  confidence: "B"
+
+- decade: 1910
+  infantMortalityRate: 0.230
+  childMortalityRate: 0.145
+  baseCrudeDeathRate: 32.5
+  lifeExpectancy: 32.0
+  source: "巴克《中国农家经济》抽样调查综合推算"
+  confidence: "B"
+
+- decade: 1920
+  infantMortalityRate: 0.220
+  childMortalityRate: 0.140
+  baseCrudeDeathRate: 31.0
+  lifeExpectancy: 33.5
+  source: "Ansley Coale《中国人口与死亡率变迁》"
+  confidence: "B"
+
+- decade: 1930
+  infantMortalityRate: 0.200
+  childMortalityRate: 0.130
+  baseCrudeDeathRate: 29.0
+  lifeExpectancy: 35.0
+  source: "国民政府内政部统计年报估算"
+  confidence: "B"
+
+- decade: 1940
+  infantMortalityRate: 0.200
+  childMortalityRate: 0.130
+  baseCrudeDeathRate: 28.0
+  lifeExpectancy: 35.0
+  source: "战时抗战与内战人口抽样修正"
+  confidence: "B"
+
+- decade: 1950
+  infantMortalityRate: 0.138
+  childMortalityRate: 0.080
+  baseCrudeDeathRate: 17.0
+  lifeExpectancy: 46.5
+  source: "1953年第一次全国人口普查及国家统计局公报"
+  confidence: "A"
+
+- decade: 1960
+  infantMortalityRate: 0.085
+  childMortalityRate: 0.045
+  baseCrudeDeathRate: 11.5
+  lifeExpectancy: 57.0
+  source: "1964年第二次全国人口普查汇总"
+  confidence: "A"
+
+- decade: 1970
+  infantMortalityRate: 0.052
+  childMortalityRate: 0.025
+  baseCrudeDeathRate: 7.2
+  lifeExpectancy: 65.5
+  source: "卫生部全国恶性肿瘤死因调查与人口普查资料"
+  confidence: "A"
+
+- decade: 1980
+  infantMortalityRate: 0.035
+  childMortalityRate: 0.015
+  baseCrudeDeathRate: 6.6
+  lifeExpectancy: 68.0
+  source: "1982年第三次全国人口普查详细分析报告"
+  confidence: "A"
+
+- decade: 1990
+  infantMortalityRate: 0.032
+  childMortalityRate: 0.012
+  baseCrudeDeathRate: 6.5
+  lifeExpectancy: 71.0
+  source: "1990年第四次全国人口普查数据公报"
+  confidence: "A"

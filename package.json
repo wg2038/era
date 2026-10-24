@@ -1,0 +1,33 @@
+{
+  "name": "era-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Era - A deterministic, web-first Chinese life simulation game (1900-2025)",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @era/web dev",
+    "build": "pnpm run build:core && pnpm run build:data && pnpm --filter @era/web build",
+    "build:core": "wasm-pack build crates/era-core --target web --out-dir ../../packages/core-wasm --scope era",
+    "build:data": "pnpm --filter @era/data build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:core": "cargo test --manifest-path crates/era-core/Cargo.toml",
+    "test:monte-carlo": "cargo test --manifest-path crates/era-core/Cargo.toml --test monte_carlo -- --nocapture",
+    "check": "pnpm --filter @era/data check && pnpm --filter @era/web check",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.2",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  }
+}

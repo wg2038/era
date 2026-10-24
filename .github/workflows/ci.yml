@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Biome Linter & Formatter
+        run: pnpm lint
+
+      - name: TypeScript & Data Validation
+        run: pnpm check
+
+      - name: Rust Unit & Monte Carlo Tests
+        run: pnpm test:core
+
+      - name: Frontend Unit & Property Tests
+        run: pnpm test
+
+      - name: Build All Artifacts
+        run: pnpm build

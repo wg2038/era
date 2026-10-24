@@ -1,0 +1,39 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Node / Dependencies
+node_modules
+.pnpm-store
+
+# SvelteKit / Build
+.svelte-kit
+build
+dist
+.vercel
+.cloudflare
+
+# Rust / WASM
+target
+Cargo.lock
+**/*.rs.bk
+pkg
+wasm-pack.log
+
+# Testing
+coverage
+test-results
+playwright-report
+blob-report
+playwright/.cache
+
+# Environment & OS
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

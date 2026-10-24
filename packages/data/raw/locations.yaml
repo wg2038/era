@@ -1,0 +1,77 @@
+- id: "loc_beijing"
+  currentName: "北京"
+  region: "华北"
+  populationWeight:
+    "1900": 1.2
+    "1930": 1.5
+    "1953": 2.8
+    "1982": 4.5
+    "1999": 6.8
+  historicalNames:
+    - startYear: 1900
+      endYear: 1911
+      name: "京师顺天府"
+      note: "清末直隶总督辖区与顺天府"
+    - startYear: 1912
+      endYear: 1927
+      name: "北京"
+      note: "中华民国北洋政府时期"
+    - startYear: 1928
+      endYear: 1948
+      name: "北平"
+      note: "国民政府定都南京后设北平特别市"
+    - startYear: 1949
+      endYear: 2025
+      name: "北京"
+      note: "中华人民共和国首都"
+  climate: "temperate"
+  source: "《中国历史地图集》第8册；《中国行政区划通史·中华民国卷》"
+  confidence: "A"
+
+- id: "loc_shenzhen"
+  currentName: "深圳"
+  region: "华南"
+  populationWeight:
+    "1900": 0.2
+    "1930": 0.3
+    "1953": 0.4
+    "1982": 1.2
+    "1999": 5.0
+  historicalNames:
+    - startYear: 1900
+      endYear: 1913
+      name: "新安县"
+      note: "广州府新安县"
+    - startYear: 1914
+      endYear: 1978
+      name: "宝安县"
+      note: "为避免与河南新安县重名而复称宝安"
+    - startYear: 1979
+      endYear: 2025
+      name: "深圳市"
+      note: "1979年撤县设市，1980年建立经济特区"
+  climate: "subtropical"
+  source: "《宝安县志》；《深圳市志·总述》"
+  confidence: "A"
+
+- id: "loc_shanghai"
+  currentName: "上海"
+  region: "华东"
+  populationWeight:
+    "1900": 2.5
+    "1930": 3.8
+    "1953": 6.2
+    "1982": 7.5
+    "1999": 9.2
+  historicalNames:
+    - startYear: 1900
+      endYear: 1926
+      name: "松江府上海县"
+      note: "含公共租界与法租界华洋分治时期"
+    - startYear: 1927
+      endYear: 2025
+      name: "上海特别市"
+      note: "1927年设立上海特别市，后沿用上海直辖市"
+  climate: "subtropical"
+  source: "《上海通志》第一卷建置沿革"
+  confidence: "A"
