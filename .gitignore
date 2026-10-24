@@ -23,6 +23,7 @@ Cargo.lock
 **/*.rs.bk
 pkg
 wasm-pack.log
+packages/core-wasm/*.wasm
 
 # Testing
 coverage

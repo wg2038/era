@@ -1,0 +1,19 @@
+{
+  "name": "@era/era-core",
+  "type": "module",
+  "collaborators": [
+    "Cicada <cicada@era.local>"
+  ],
+  "description": "Deterministic WASM life simulation kernel for Era",
+  "version": "0.1.0",
+  "files": [
+    "era_core_bg.wasm",
+    "era_core.js",
+    "era_core.d.ts"
+  ],
+  "main": "era_core.js",
+  "types": "era_core.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
