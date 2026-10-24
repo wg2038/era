@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Era | 时代 - 人生节点提问</title>
+  <style>
+    :root {
+      --bg: #14090C;
+      --card: #221015;
+      --card-highlight: #2E161D;
+      --border: #4A2430;
+      --primary: #A3263F;
+      --primary-hover: #BF304E;
+      --accent: #F2A7B8;
+      --accent-soft: #F8D7DE;
+      --text: #F6E9EC;
+      --text-muted: #B9959D;
+      --font-serif: "Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "STSong", "SimSun", Georgia, serif;
+      --font-sans: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #FBEFF1;
+        --card: #FFFFFF;
+        --card-highlight: #FFF5F7;
+        --border: #E8C4CC;
+        --primary: #A3263F;
+        --primary-hover: #821D31;
+        --accent: #C44D66;
+        --accent-soft: #7A2538;
+        --text: #4A0E1C;
+        --text-muted: #8C4F5E;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle at 50% 10%, rgba(163, 38, 63, 0.18), transparent 75%);
+    }
+
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(20, 9, 12, 0.9);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    @media (prefers-color-scheme: light) {
+      .top-bar {
+        background: rgba(251, 239, 241, 0.92);
+      }
+    }
+
+    .top-bar .info {
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .top-bar .info .year {
+      color: var(--accent);
+      font-size: 15px;
+    }
+
+    .milestone-badge {
+      background: rgba(242, 167, 184, 0.2);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .layout-grid {
+      flex: 1;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      padding: 18px 16px 180px;
+      gap: 20px;
+    }
+
+    @media (min-width: 900px) {
+      .layout-grid {
+        grid-template-columns: 560px 340px;
+        padding: 28px 16px 40px;
+        align-items: start;
+      }
+    }
+
+    .narrative-stream {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .reflection-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .reflection-header {
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    h1.reflection-title {
+      font-family: var(--font-serif);
+      font-size: clamp(22px, 3.5vw, 26px);
+      line-height: 1.4;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    .narrative-body {
+      font-family: var(--font-serif);
+      font-size: 17px;
+      line-height: 1.75;
+      color: var(--text);
+      margin-bottom: 22px;
+    }
+
+    .narrative-body p + p {
+      margin-top: 12px;
+    }
+
+    .prompt-box {
+      background: var(--card-highlight);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .prompt-question {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .prompt-hint {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .quote-input {
+      width: 100%;
+      min-height: 80px;
+      padding: 12px 14px;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      line-height: 1.6;
+      background: rgba(20, 9, 12, 0.6);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      resize: vertical;
+      transition: all 0.15s ease-in-out;
+    }
+    @media (prefers-color-scheme: light) {
+      .quote-input {
+        background: #FFFFFF;
+      }
+    }
+
+    .quote-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(242, 167, 184, 0.2);
+    }
+
+    .char-count {
+      text-align: right;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* 历史留白回顾 */
+    .past-quotes {
+      border-top: 1px dashed var(--border);
+      padding-top: 16px;
+      margin-top: 10px;
+    }
+
+    .past-quotes h4 {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .quote-item {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      color: var(--text);
+      padding: 8px 12px;
+      background: rgba(20, 9, 12, 0.4);
+      border-left: 2px solid var(--primary);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    @media (prefers-color-scheme: light) {
+      .quote-item {
+        background: #F7E4E7;
+      }
+    }
+
+    /* 手机底部抽屉 */
+    .mobile-drawer {
+      display: block;
+    }
+    @media (min-width: 900px) {
+      .mobile-drawer {
+        display: none;
+      }
+    }
+
+    .mobile-drawer summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 10px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mobile-drawer .drawer-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      padding: 14px;
+    }
+
+    /* 桌面端常驻侧栏 */
+    .desktop-sidebar {
+      display: none;
+    }
+    @media (min-width: 900px) {
+      .desktop-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: sticky;
+        top: 60px;
+      }
+    }
+
+    .side-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .side-card h3 {
+      font-size: 13px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    /* 底部固定操作区 */
+    .action-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      background: rgba(20, 9, 12, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+    @media (prefers-color-scheme: light) {
+      .action-container {
+        background: rgba(251, 239, 241, 0.94);
+      }
+    }
+
+    @media (min-width: 900px) {
+      .action-container {
+        position: static;
+        background: transparent;
+        backdrop-filter: none;
+        border-top: none;
+        padding: 10px 0 0;
+      }
+    }
+
+    .btn-submit {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: var(--font-sans);
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: #FFFFFF;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(163, 38, 63, 0.35);
+      transition: all 0.15s ease-in-out;
+    }
+    .btn-submit:hover {
+      background: var(--primary-hover);
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <div class="info">
+      <span class="year">1965 年</span>
+      <span>·</span>
+      <span>30 岁</span>
+      <span>·</span>
+      <span>北京</span>
+    </div>
+    <span class="milestone-badge">三十而立 · 人生节点</span>
+  </header>
+
+  <main class="layout-grid">
+    <section class="narrative-stream">
+      <article class="reflection-card">
+        <div class="reflection-header">生命关卡暂停 · 1965</div>
+        <h1 class="reflection-title">三十岁的这一夜，大雪漫过红星机械厂</h1>
+
+        <div class="narrative-body">
+          <p>
+            从 1935 到 1965，三十年忽焉而过。你从战乱饥荒与金圆券狂潮中活了下来，经历建国初的改制，如今是第一机械制造厂的三级钳工。
+          </p>
+          <p>
+            床头的小收音机放着时代交响，妻子已携幼子入眠，父母早年长逝。在这间由筒子楼隔出的十二平米房里，你把泛黄的笔记本摊在煤油灯下，镜中双鬓已有星点霜白。
+          </p>
+        </div>
+
+        <div class="prompt-box">
+          <div class="prompt-question">
+            “三十岁这一年，你最庆幸自己没有放弃什么？”
+          </div>
+          <div class="prompt-hint">
+            请写下一句话。这句话将被岁月尘封，直至终局寿终盖棺之时，重新与你相认。
+          </div>
+
+          <textarea
+            class="quote-input"
+            rows="3"
+            placeholder="写下你内心的回答（例如：庆幸当年没有扔下老母亲，也庆幸夜里读过的那些旧书本……）"
+          >纵使世道几番翻覆，我仍保住了一双手的手艺，守住了屋檐下的这点人间烟火。</textarea>
+          <div class="char-count">41 / 100 字</div>
+        </div>
+
+        <div class="past-quotes">
+          <h4>昔年回响（你在以往人生节点留下的句子）：</h4>
+          <div class="quote-item">
+            <strong>15 岁（1950 年）：</strong>“只想让娘吃上一碗热干面，哪怕夜里给铁匠铺拉风箱拉到手软脱皮。”
+          </div>
+        </div>
+      </article>
+
+      <details class="mobile-drawer">
+        <summary>
+          <span>查看家庭现状与购买力积累</span>
+          <span>▼</span>
+        </summary>
+        <div class="drawer-content">
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+            <strong>家庭成员：</strong>妻子（28岁·纺织女工）、长子（4岁·活泼）<br />
+            <strong>储蓄：</strong>88 PPP（第三套新人民币 + 粮票布票配额）<br />
+            <strong>职业：</strong>北京市第一轻工机床厂 · 三级钳工
+          </div>
+        </div>
+      </details>
+
+      <section class="action-container">
+        <div class="action-row">
+          <button class="btn-submit" type="button">封存这句话，继续迈向 31 岁</button>
+        </div>
+      </section>
+    </section>
+
+    <aside class="desktop-sidebar">
+      <div class="side-card">
+        <h3>同龄四人三十岁剪影</h3>
+        <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+          <p>• 张长生：在京郊公社担任生产队会计</p>
+          <p style="color: #E06C75;">• 李二丫：3岁夭折</p>
+          <p>• 王建国：进百货大楼做供销员</p>
+          <p>• 赵春燕：上海国棉厂技工</p>
+        </div>
+      </div>
+
+      <div class="side-card">
+        <h3>节点沉思法则</h3>
+        <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+          <p>• 节点岁数：5岁、15岁、30岁、50岁、70岁</p>
+          <p>• 作用：给机械数值沉浸的人生注入真正的文学回眸，在终局页汇编为一生的自省心语录。</p>
+        </div>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

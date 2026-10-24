@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Era | 时代 - 出生篇</title>
+  <style>
+    :root {
+      --bg: #14090C;
+      --card: #221015;
+      --card-highlight: #2E161D;
+      --border: #4A2430;
+      --primary: #A3263F;
+      --primary-hover: #BF304E;
+      --accent: #F2A7B8;
+      --accent-soft: #F8D7DE;
+      --text: #F6E9EC;
+      --text-muted: #B9959D;
+      --font-serif: "Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "STSong", "SimSun", Georgia, serif;
+      --font-sans: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #FBEFF1;
+        --card: #FFFFFF;
+        --card-highlight: #FFF5F7;
+        --border: #E8C4CC;
+        --primary: #A3263F;
+        --primary-hover: #821D31;
+        --accent: #C44D66;
+        --accent-soft: #7A2538;
+        --text: #4A0E1C;
+        --text-muted: #8C4F5E;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle at 50% 0%, rgba(163, 38, 63, 0.15), transparent 70%);
+    }
+
+    /* 顶部紧凑状态条 */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(20, 9, 12, 0.85);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+    }
+    @media (prefers-color-scheme: light) {
+      .top-bar {
+        background: rgba(251, 239, 241, 0.88);
+      }
+    }
+
+    .top-bar .brand {
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      font-size: 14px;
+    }
+
+    .top-bar .meta {
+      color: var(--text-muted);
+    }
+
+    /* 主网格容器 */
+    .layout-grid {
+      flex: 1;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      padding: 20px 16px 140px;
+      gap: 24px;
+    }
+
+    @media (min-width: 900px) {
+      .layout-grid {
+        grid-template-columns: 560px 340px;
+        padding: 32px 16px 40px;
+        align-items: start;
+      }
+    }
+
+    /* 叙事主栏 */
+    .narrative-stream {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .narrative-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .era-tag {
+      display: inline-block;
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(163, 38, 63, 0.2);
+      border: 1px solid rgba(242, 167, 184, 0.25);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    h1.scene-title {
+      font-family: var(--font-serif);
+      font-size: clamp(22px, 3.5vw, 28px);
+      line-height: 1.4;
+      color: var(--text);
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .narrative-text {
+      font-family: var(--font-serif);
+      font-size: 17px;
+      line-height: 1.75;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .narrative-text p + p {
+      margin-top: 14px;
+    }
+
+    .narrative-text .highlight {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .meta-box {
+      background: var(--card-highlight);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 18px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+
+    .meta-box strong {
+      color: var(--text);
+    }
+
+    /* 侧边信息栏（桌面端常驻，手机端收进下方抽屉） */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .side-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .side-card h3 {
+      font-size: 14px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .peer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .peer-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background: rgba(20, 9, 12, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    @media (prefers-color-scheme: light) {
+      .peer-item {
+        background: #F7E4E7;
+      }
+    }
+
+    .peer-item .name {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .peer-item .destiny {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* 手机端抽屉 */
+    .mobile-drawer {
+      display: block;
+    }
+    @media (min-width: 900px) {
+      .mobile-drawer {
+        display: none;
+      }
+    }
+
+    .mobile-drawer summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 12px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mobile-drawer summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .mobile-drawer[open] summary {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom: none;
+    }
+
+    .mobile-drawer .drawer-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      padding: 16px;
+    }
+
+    /* 桌面隐藏手机抽屉，显示独立侧边栏 */
+    .desktop-sidebar {
+      display: none;
+    }
+    @media (min-width: 900px) {
+      .desktop-sidebar {
+        display: flex;
+        position: sticky;
+        top: 60px;
+      }
+    }
+
+    /* 底部操作区（手机固定，桌面就地居中） */
+    .action-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      background: rgba(20, 9, 12, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+    @media (prefers-color-scheme: light) {
+      .action-container {
+        background: rgba(251, 239, 241, 0.94);
+      }
+    }
+
+    @media (min-width: 900px) {
+      .action-container {
+        position: static;
+        background: transparent;
+        backdrop-filter: none;
+        border-top: none;
+        padding: 12px 0 0;
+      }
+    }
+
+    .action-row {
+      max-width: 560px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease-in-out;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(163, 38, 63, 0.35);
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--accent);
+    }
+    .btn-outline:hover {
+      background: var(--card-highlight);
+      border-color: var(--accent);
+    }
+
+    .sub-tip {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部状态细条 -->
+  <header class="top-bar">
+    <div class="brand">ERA · 时代</div>
+    <div class="meta">1935 年 · 降生</div>
+  </header>
+
+  <main class="layout-grid">
+    <!-- 主叙事栏 -->
+    <section class="narrative-stream">
+      <article class="narrative-card">
+        <span class="era-tag">民国二十四年 · 晚秋</span>
+        <h1 class="scene-title">1935 年，你降生在北平（今北京）</h1>
+
+        <div class="narrative-text">
+          <p>
+            窗外天阴欲雪，寒风刮过宣武门外破败的青砖夹道。你落地于南城一间逼仄的大杂院偏房中，啼哭声微弱，裹在一条浆洗发硬的粗布夹袄里。
+          </p>
+          <p>
+            这一年，华北局势波谲云诡，关外风声日紧。父亲在菜市口的一处粮栈做扛脚伙计，手脚磨得满是冻疮；母亲常年给大户人家浆洗衣裳，双手被碱水泡得通红。
+          </p>
+          <p>
+            接生的大娘叹了一口气，对你父亲道：“年头虽荒，总归是个囫囵男娃。大人紧紧肚肠，好歹给孩子争口热气。”
+          </p>
+        </div>
+
+        <div class="meta-box">
+          <div><strong>家族背景：</strong>北平平民阶层（父母双全，长兄 4 岁）</div>
+          <div><strong>出生地人口加权：</strong>华北核心区 · 顺天府故址（历史沿革：京师 $\rightarrow$ 北京 $\rightarrow$ 北平）</div>
+          <div><strong>时代危机指标：</strong>婴儿死亡率 22.6% · 预期寿命 34.3 岁</div>
+        </div>
+      </article>
+
+      <!-- 手机端收纳抽屉：同年同县出生的另外四人 -->
+      <details class="mobile-drawer">
+        <summary>
+          <span>查看同年同县出生的另外四人</span>
+          <span>▼</span>
+        </summary>
+        <div class="drawer-content">
+          <div class="peer-list">
+            <div class="peer-item">
+              <span class="name">张长生（宛平县·农家）</span>
+              <span class="destiny">命运同行者 #1</span>
+            </div>
+            <div class="peer-item">
+              <span class="name">李二丫（崇文门外·织户）</span>
+              <span class="destiny">命运同行者 #2</span>
+            </div>
+            <div class="peer-item">
+              <span class="name">王建国（交道口·账房）</span>
+              <span class="destiny">命运同行者 #3</span>
+            </div>
+            <div class="peer-item">
+              <span class="name">赵春燕（西单·杂货行）</span>
+              <span class="destiny">命运同行者 #4</span>
+            </div>
+          </div>
+          <p class="sub-tip" style="margin-top: 10px; text-align: left;">
+            * 若未成年早夭，可移魂至健在同伴视角继续人生。
+          </p>
+        </div>
+      </details>
+
+      <!-- 底部操作区 -->
+      <section class="action-container">
+        <div class="action-row">
+          <button class="btn btn-primary" type="button">开启这段人生（进入 1 岁）</button>
+          <button class="btn btn-outline" type="button">重新投胎（换一个时代与地点）</button>
+          <div class="sub-tip">种子码：ERA#42#1935#loc_beijing · 确定性开局</div>
+        </div>
+      </section>
+    </section>
+
+    <!-- 桌面端常驻侧边栏 -->
+    <aside class="desktop-sidebar sidebar">
+      <div class="side-card">
+        <h3>同年同县出生的同行者</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+          与你同一时刻降生在北平的另外四个孩子。时代的大浪将把你们推向完全不同的彼岸：
+        </p>
+        <div class="peer-list">
+          <div class="peer-item">
+            <div>
+              <div class="name">张长生</div>
+              <div style="font-size: 12px; color: var(--text-muted);">宛平县 · 佃农家庭</div>
+            </div>
+            <span class="destiny">同行 #1</span>
+          </div>
+          <div class="peer-item">
+            <div>
+              <div class="name">李二丫</div>
+              <div style="font-size: 12px; color: var(--text-muted);">崇文外 · 织布小工</div>
+            </div>
+            <span class="destiny">同行 #2</span>
+          </div>
+          <div class="peer-item">
+            <div>
+              <div class="name">王建国</div>
+              <div style="font-size: 12px; color: var(--text-muted);">交道口 · 钱庄杂役</div>
+            </div>
+            <span class="destiny">同行 #3</span>
+          </div>
+          <div class="peer-item">
+            <div>
+              <div class="name">赵春燕</div>
+              <div style="font-size: 12px; color: var(--text-muted);">西单 · 杂货铺次女</div>
+            </div>
+            <span class="destiny">同行 #4</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-card">
+        <h3>宏观史料背景</h3>
+        <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+          <p>• 1935年华北事变后，平津局势危殆。</p>
+          <p>• 货币：白银风潮，法币改革前夕，民间多以大洋铜板找零结算。</p>
+          <p>• 全站适龄提示：15+，史料克制严谨呈现。</p>
+        </div>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>
