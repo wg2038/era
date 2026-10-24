@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.js", "**/*.json"]
+    "includes": ["**/*.ts", "**/*.js", "**/*.json", "!packages/core-wasm"]
   },
   "formatter": {
     "enabled": true,
